@@ -1,6 +1,6 @@
 # now with the mille data creation
 function rmeas(strip_X, strip_Y, m, t)
-    mlhit = strip_to_local(strip_X, strip_Y)
+    mlhit = strip_to_local(strip_X, strip_Y, m)
     s = intersection(m, t)
     elhit = global_to_local(t(s), m)
     return mlhit[1] - elhit[1]

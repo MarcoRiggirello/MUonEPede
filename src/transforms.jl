@@ -42,7 +42,7 @@ Conversion of module local coordinates from strip number to cm.
 # References
 See https://gitlab.cern.ch/muesli/daq-sw/daq-decode/-/blob/api/src/Converter.cpp
 """
-function strip_to_local(strip_X::Real, strip_Y::Real)
+function strip_to_local(strip_X::Real, strip_Y::Real, m::MUonEModule)
     nstrips = 1016
     strip_pitch = 0.009
     sensor_dimension_Y = 10
@@ -51,5 +51,9 @@ function strip_to_local(strip_X::Real, strip_Y::Real)
     
     cm_X = (nstrips/2 - strip_X) * strip_pitch - strip_pitch/2
     cm_Y = (strip_Y - 0.5) * sensor_dimension_Y
-    return SVector(cm_X, cm_Y, 0)
+    if m.type == 'U' || m.type == 'V'
+        return SVector(cm_X, cm_Y, -2.0)
+    else
+        return SVector(cm_X, cm_Y, -0.9)
+    end
 end

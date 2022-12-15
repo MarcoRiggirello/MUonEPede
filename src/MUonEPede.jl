@@ -14,10 +14,10 @@ export local_to_global, global_to_local
 export intersection, interpolate
 export getmodules, generatebin
 
+include("types.jl")
 include("io.jl")
 include("intersection.jl")
 include("mille.jl")
-include("transformations.jl")
-include("types.jl")
+include("transforms.jl")
 
 end
