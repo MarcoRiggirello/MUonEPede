@@ -6,11 +6,7 @@ Computes the arc lenght `s` of the intersection point between a `Track` and a `M
 """
 function intersection(m::MUonEModule, t::Track)
     _, _, eZ = local_axes(m)
-    if m.type == 'X' || m.type == 'Y'
-        Z = -0.9
-    else
-        Z = -2.0
-    end
+    Z = -1 * m.spacing/2
     return (Z + (m.r0 - t.t0) ⋅ eZ) / (t.et ⋅eZ)
 end
 

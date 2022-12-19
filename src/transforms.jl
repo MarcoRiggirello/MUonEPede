@@ -5,10 +5,7 @@ Compute the versors of the local reference frame.
     
 """
 function local_axes(m::MUonEModule)
-    # in case of wrong understanding of
-    # the transform, traspose R (=R^-1)
-    # and then do the same thing.
-    eX = SVector{3}(m.R[1:3]) # poi si spiega
+    eX = SVector{3}(m.R[1:3])
     eY = SVector{3}(m.R[4:6])
     eZ = SVector{3}(m.R[7:9])
     return eX, eY, eZ
@@ -35,12 +32,16 @@ function global_to_local(r::StaticVector{3}, m::MUonEModule)
 end
 
 """
-    strip_to_local(strip_X::Real, strip_Y::Real)
+    strip_to_local(strip_X::Real, strip_Y::Real, m::MUonEModule)
     
 Conversion of module local coordinates from strip number to cm.
 
 # References
 See https://gitlab.cern.ch/muesli/daq-sw/daq-decode/-/blob/api/src/Converter.cpp
+
+# Notes
+To ensure that the local frame is right handed, the cm_X output has an overall minus sign
+wrt the original converter.
 """
 function strip_to_local(strip_X::Real, strip_Y::Real, m::MUonEModule)
     nstrips = 1016
@@ -49,11 +50,7 @@ function strip_to_local(strip_X::Real, strip_Y::Real, m::MUonEModule)
     
     strip_X = strip_X/2 - 1
     
-    cm_X = (nstrips/2 - strip_X) * strip_pitch - strip_pitch/2
+    cm_X = (strip_X - nstrips/2) * strip_pitch - strip_pitch/2
     cm_Y = (strip_Y - 0.5) * sensor_dimension_Y
-    if m.type == 'U' || m.type == 'V'
-        return SVector(cm_X, cm_Y, -2.0)
-    else
-        return SVector(cm_X, cm_Y, -0.9)
-    end
+    return SVector(cm_X, cm_Y, -1*m.spacing/2)
 end

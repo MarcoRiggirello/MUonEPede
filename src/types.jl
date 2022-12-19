@@ -17,11 +17,11 @@ struct MUonEModule{T<:Real}
     """
     name::String
     """
-        type::Char
+        spacing::Real
         
-    The module type. It must be 'X', 'Y', 'U' or 'V'.
+    The spacing between top and bottom sensors.
     """
-    type::Char
+    spacing::Real
     """
         r0::SVector{3,T}
         
@@ -53,31 +53,15 @@ struct MUonEModule{T<:Real}
     - `name::String`: module name;
     - `type::Char`: module type. Must be 'X', 'Y', 'U', 'V',
     otherwise throws an error.
-    
-    #Notes
-    If the module is of type 'Y' a rotation of `pi` about the `y` axis
-    and a rotation of `pi/2` about the `z` axis is added, to adapt the
-    constructor to the conventions used in the MUonE structure definition.
     """
-    function MUonEModule{T}(x0, y0, z0, θx, θy, θz; id, name, type) where {T}
-        if type == 'Y'
-            θx = θx
-            θy = θy + pi
-            θz = θz + pi/2
-        elseif type == 'X' || type == 'U' || type == 'V'
-            θx = θx
-            θy = θy
-            θz = θz
-        else
-            throw(ArgumentError("module type not known."))
-        end
-        return new{T}(id, name, type, SVector{3, T}(x0, y0, z0), RotXYZ{T}(θx, θy, θz))
+    function MUonEModule{T}(x0, y0, z0, θx, θy, θz; id, name, spacing) where {T}
+        return new{T}(id, name, spacing, SVector{3, T}(x0, y0, z0), RotXYZ{T}(θx, θy, θz))
     end
 end
 
-MUonEModule(x0::T, y0::T, z0::T, θx::T, θy::T, θz::T; id, name, type) where {T<:Real} = MUonEModule{T}(x0, y0, z0, θx, θy, θz; id=id, name=name, type=type)
+MUonEModule(x0::T, y0::T, z0::T, θx::T, θy::T, θz::T; id, name, spacing) where {T<:Real} = MUonEModule{T}(x0, y0, z0, θx, θy, θz; id=id, name=name, spacing=spacing)
 
-MUonEModule(x0::Real, y0::Real, z0::Real, θx::Real, θy::Real, θz::Real; id, name, type) = MUonEModule(promote(x0, y0, z0, θx, θy, θz)...; id=id, name=name, type=type)
+MUonEModule(x0::Real, y0::Real, z0::Real, θx::Real, θy::Real, θz::Real; id, name, spacing) = MUonEModule(promote(x0, y0, z0, θx, θy, θz)...; id=id, name=name, spacing=spacing)
 
 
 """

@@ -20,9 +20,9 @@ function getmodules(fname::String)
         θz = parse(Float32, rot["rotationZ"])
         id = parse(Int32, m["linkId"])
         name = m["name"]
-        type = only(m["moduleType"])
+        spacing = parse(Float32, m["sensorSpacing"])
 
-        modules[i] = MUonEModule(x0, y0, z0, θx, θy, θz, id=id, name=name, type=type)
+        modules[i] = MUonEModule(x0, y0, z0, θx, θy, θz, id=id, name=name, spacing=spacing)
     end
     return SVector{6}(modules)
 end
@@ -72,10 +72,10 @@ function generatebin(; ifname::String, mfname::String, ofname::String)
         permute!(strips_X, ix)
         permute!(strips_Y, ix)
         # costruisci la traccia target
-        hit0 = local_to_global(strip_to_local(strips_X[1], strips_Y[1]), modules[1])
-        hit1 = local_to_global(strip_to_local(strips_X[2], strips_Y[2]), modules[2])
-        hit4 = local_to_global(strip_to_local(strips_X[5], strips_Y[5]), modules[5])
-        hit5 = local_to_global(strip_to_local(strips_X[6], strips_Y[6]), modules[6])
+        hit0 = local_to_global(strip_to_local(strips_X[1], strips_Y[1], modules[1]), modules[1])
+        hit1 = local_to_global(strip_to_local(strips_X[2], strips_Y[2], modules[2]), modules[2])
+        hit4 = local_to_global(strip_to_local(strips_X[5], strips_Y[5], modules[5]), modules[5])
+        hit5 = local_to_global(strip_to_local(strips_X[6], strips_Y[6], modules[6]), modules[6])
         track = interpolate(hit0, hit1, hit4, hit5)
         # mille() per ogni hit
         for (sx, sy, m) in zip(strips_X, strips_Y, modules)

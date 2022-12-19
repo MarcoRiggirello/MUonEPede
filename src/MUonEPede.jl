@@ -10,7 +10,7 @@ using UnROOT, FortranFiles, EzXML
 using ProgressBars
 
 export MUonEModule, Track
-export local_to_global, global_to_local
+export strip_to_local, local_to_global, global_to_local
 export intersection, interpolate
 export getmodules, generatebin
 
