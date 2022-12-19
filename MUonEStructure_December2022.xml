@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MUonE_structure>
+    <Station stationId="0" name="MUonE_station" nModules="6">
+        <Position positionX="0" positionY="0" positionZ="0" />
+        <Rotation rotationX="0" rotationY="0" rotationZ="0" />
+        <Module number="0" name="PG01" linkId="0" moduleType="X" sensorSpacing="1.8" isOn="1">
+            <Position positionX="0" positionY="0" positionZ="18.0218" />
+            <Rotation rotationX="0" rotationY="0.233" rotationZ="3.1415" />
+        </Module>
+        <Module number="1" name="BXL" linkId="1" moduleType="Y" sensorSpacing="1.8" isOn="1">
+            <Position positionX="0" positionY="0" positionZ="21.8693" />
+            <Rotation rotationX="-0.233" rotationY="3.1415" rotationZ="1.5708" />
+        </Module>
+
+        <Module number="2" name="BXL" linkId="2" moduleType="U" sensorSpacing="4.0" isOn="1">
+            <Position positionX="0" positionY="0" positionZ="55.3635" />
+            <Rotation rotationX="0" rotationY="3.1415" rotationZ="0.7854" />
+        </Module>
+        <Module number="3" name="CMS" linkId="3" moduleType="V" sensorSpacing="4.0" isOn="1">
+            <Position positionX="0" positionY="0" positionZ="56.6205" />
+            <Rotation rotationX="0" rotationY="0" rotationZ="0.7854" />
+        </Module>
+
+        <Module number="4" name="PG02_patch" linkId="4" moduleType="X" sensorSpacing="1.8" isOn="1">
+            <Position positionX="0" positionY="0" positionZ="89.9218" />
+            <Rotation rotationX="0" rotationY="0.233" rotationZ="3.1415" />
+        </Module>
+        <Module number="5" name="KIT" linkId="5" moduleType="Y" sensorSpacing="1.8" isOn="1">
+            <Position positionX="0" positionY="0" positionZ="93.7693" />
+            <Rotation rotationX="-0.233" rotationY="3.1415" rotationZ="1.5708" />
+        </Module>
+    </Station>
+</MUonE_structure>
