@@ -12,12 +12,14 @@ using ProgressBars
 export MUonEModule, Track
 export strip_to_local, local_to_global, global_to_local
 export intersection, interpolate
-export getmodules, generatebin
+export getmodules, generatebin, generatebinmc
 
 include("types.jl")
 include("io.jl")
 include("intersection.jl")
 include("mille.jl")
 include("transforms.jl")
+
+include("montecarlo.jl")
 
 end
