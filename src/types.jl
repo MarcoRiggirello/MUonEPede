@@ -1,126 +1,67 @@
 """
-    struct MUonEModule{T<:Real}
+    MUonEModule{T<:Real}(x0, y0, z0, θx, θy, θz; id, name, spacing)
     
 A 2S module used in the beam test station.
+
+`x0`, `y0` and `z0` are used to construct the (static) vector `r0`,
+which defines the position of the center of the module in the global
+reference frame.
+
+The `θ`s are the [Tait-Bryan angles](https://en.wikipedia.org/wiki/Euler_angles#Tait%E2%80%93Bryan_angles)
+which defines the active, extrinsic, local to global rotation
+matrix  `R`, applied in the (right to left) order x-y-z.
+
+#Arguments
+- `x0::T`: the x component of `r0`, in cm;
+- `y0::T`: the y component of `r0`, in cm;
+- `z0::T`: the z component of `r0`, in cm;
+- `θx::T`: rotation around global x axis, in radiants;
+- `θy::T`: rotation around global y axis, in radiants;
+- `θz::T`: rotation around global z axis, in radiants;
+- `id::Integer`: the linkId;
+- `name::String`: module name;
+- `spacing::T`: spacing between sensors in cm.
 """
 struct MUonEModule{T<:Real}
-    """
-       id::Integer
-    
-    The module linkID. 
-    """
     id::Integer
-    """
-        name::String
-        
-    The module name.
-    """
     name::String
-    """
-        spacing::Real
-        
-    The spacing between top and bottom sensors.
-    """
-    spacing::Real
-    """
-        r0::SVector{3,T}
-        
-    The offset vector of the module center w.r.t. the global axes origin, in cm.
-    """
+    spacing::T
     r0::SVector{3, T}
-    """
-        R::Rotation{3, T}
-        
-    The rotation matrix to be applied for local-to-global coordinate conversion.
-    We use as parameters the
-    [Tait-Bryan angles](https://en.wikipedia.org/wiki/Euler_angles#Tait%E2%80%93Bryan_angles)
-    applied in the (right to left) order x-y-z.
-    """ 
     R::Rotation{3, T}
-    """
-        MUonEModule{T}(x0, y0, z0, θx, θy, θz; id, name, type) where {T}
-        
-    default constructor
-    
-    #Arguments
-    - `x0::Real`: the x component of `r0`, in cm;
-    - `y0::Real`: the y component of `r0`, in cm;
-    - `z0::Real`: the z component of `r0`, in cm;
-    - `θx::Real`: rotation around global x axis, in radiants;
-    - `θy::Real`: rotation around global y axis, in radiants;
-    - `θz::Real`: rotation around global z axis, in radiants;
-    - `id::Integer`: the linkId;
-    - `name::String`: module name;
-    - `type::Char`: module type. Must be 'X', 'Y', 'U', 'V',
-    otherwise throws an error.
-    """
     function MUonEModule{T}(x0, y0, z0, θx, θy, θz; id, name, spacing) where {T}
         return new{T}(id, name, spacing, SVector{3, T}(x0, y0, z0), RotXYZ{T}(θx, θy, θz))
     end
 end
 
-MUonEModule(x0::T, y0::T, z0::T, θx::T, θy::T, θz::T; id, name, spacing) where {T<:Real} = MUonEModule{T}(x0, y0, z0, θx, θy, θz; id=id, name=name, spacing=spacing)
+MUonEModule(x0::T, y0::T, z0::T, θx::T, θy::T, θz::T; id, name, spacing::T) where {T<:Real} = MUonEModule{T}(x0, y0, z0, θx, θy, θz; id=id, name=name, spacing=spacing)
 
-MUonEModule(x0::Real, y0::Real, z0::Real, θx::Real, θy::Real, θz::Real; id, name, spacing) = MUonEModule(promote(x0, y0, z0, θx, θy, θz)...; id=id, name=name, spacing=spacing)
-
+function MUonEModule(x0::Real, y0::Real, z0::Real, θx::Real, θy::Real, θz::Real; id, name, spacing::Real)
+    x0, y0, z0, θx, θy, θz, spacing = promote(x0, y0, z0, θx, θy, θz, spacing)
+    return MUonEModule(x0, y0, z0, θx, θy, θz; id=id, name=name, spacing=spacing)
+end
 
 """
-    struct Track{T<:Real}
+    Track{T<:Real}(x0::T, y0::T, mx::T, my::T)
     
 The track model for the 160GeV muon beam.
 """
 struct Track{T<:Real}
-    """
-        θ::T
-    
-    The polar angle (`z` is the polar axis), in radians.
-    """
-    θ::T
-    """
-        ϕ::T
-    
-    The azymuthal angle, in radians.
-    """
-    ϕ::T
-    """
-        t0::SVector{3, T}
-    
-    Intersection point between the track and the plane `z=0`.
-    """
     t0::SVector{3, T}
-    """
-        et::SVector{3, T}
-    
-    Versor of the track direction.
-    """
     et::SVector{3, T}
-    """
-        Track{T}(x0, y0, θ, ϕ) where {T}
-    
-    Default constructor.
-    
-    #Arguments
-    - `x0::Real`: x component of `t0`, in cm;
-    - `y0::Real`: y component of `t0`, in cm;
-    - `θ::Real`: polar angle, in radians;
-    - `ϕ::Real`: azymuthal angle, in radians.
-    """
-    function Track{T}(x0, y0, θ, ϕ) where {T}
-        sθ, cθ = sincos(θ) 
-        sϕ, cϕ = sincos(ϕ) 
-        return new{T}(θ, ϕ, SVector{3, T}(x0, y0, zero(T)), SVector{3, T}(sθ*cϕ, sθ*sϕ, cθ))
+    function Track{T}(x0, y0, mx, my) where {T}
+        return new{T}(Vector{3, T}(x0, y0, zero(T)), SVector{3, T}(mx, my, one(T)))
     end
 end
 
-Track(x0::T, y0::T, θ::T, ϕ::T) where {T<:Real} = Track{T}(x0, y0, θ, ϕ)
+Track(x0::T, y0::T, mx::T, my::T) where {T<:Real} = Track{T}(x0, y0, mx, my)
 
-Track(x0::Real, y0::Real, θ::Real, ϕ::Real) = Track(promote(x0, y0, θ, ϕ)...)
+Track(x0::Real, y0::Real, mx::Real, my::Real) = Track(promote(x0, y0, mx, my)...)
 
 """
-    (t::Track)(s::Real)
+    (t::Track)(z::Real)
 
-computes the track point at a given arc length `s`.
+computes the track point at a given global coordinate `z`.
 """
-function (t::Track)(s::Real)
-    return t.t0 + s * t.et
+function (t::Track)(z::Real)
+    return t.t0 + z * t.et
 end
