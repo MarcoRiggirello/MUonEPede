@@ -49,7 +49,7 @@ struct Track{T<:Real}
     t0::SVector{3, T}
     et::SVector{3, T}
     function Track{T}(x0, y0, mx, my) where {T}
-        return new{T}(Vector{3, T}(x0, y0, zero(T)), SVector{3, T}(mx, my, one(T)))
+        return new{T}(SVector{3, T}(x0, y0, zero(T)), SVector{3, T}(mx, my, one(T)))
     end
 end
 

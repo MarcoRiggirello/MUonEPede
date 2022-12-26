@@ -13,17 +13,21 @@ function local_to_strip(q::StaticVector{3,T}) where {T<:Real}
 end
 
 function mcdata!(strips_X, strips_Y, modules::StaticVector{6, MUonEModule})
-    θ = 1.2e-3 * rand(Float32)
-    ϕ = pi * rand(Float32)
+    #θ = 1.2e-1 * rand(Float32)
+    #ϕ = 2 * pi * rand(Float32)
     x0 = randn(Float32)
     y0 = randn(Float32)
+    mx = randn(Float32)
+    my = randn(Float32)
     
-    t = Track{Float32}(x0, y0, θ, ϕ)
-    s = intersection.(modules, [t])
+    t = Track{Float32}(x0, y0, mx, my)
+    z = intersection.(modules, [t])
     
-    vov = local_to_strip.(global_to_local.(t.(s), modules))
-    strips_X .= vov[1][1]
-    strips_Y .= vov[1][2]
+    vov = local_to_strip.(global_to_local.(t.(z), modules))
+    for (i, v) in enumerate(vov)
+        strips_X[i] = v[1]
+        strips_Y[i] = v[2]
+    end
 end
 
 """
@@ -33,10 +37,10 @@ Generate MonteCarlo data in a Fortran binary file using
 as input the XML structure file.
 
 #Arguments
-- `nevents::Integer`: number of tracks;
-- `mcfname::String`: name of the xml structure file with the montecarlo truth;
-- `nmfnmae::String`: name of the xml structure file with nominal positions; 
-- `ofname::String`: name of the fortran binary output file.
+- `nevents`: number of tracks;
+- `mcfname`: name of the xml structure file with the montecarlo truth;
+- `nmfnmae`: name of the xml structure file with nominal positions; 
+- `ofname`: name of the fortran binary output file.
 """
 function generatebinmc(; nevents::Integer, mcfname::String, nmfname::String, ofname::String)
     ffile = FortranFile(ofname, "w")

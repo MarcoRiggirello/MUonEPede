@@ -6,10 +6,10 @@ function rmeas(strip_X, strip_Y, z, m, t)
 end
 
 function derlc(z::Real, m::MUonEModule, t::Track)
-    dqX_dt0x = R[1,1]
-    dqX_dt0y = R[2,1]
-    dq_dmx = z * R[1,1]
-    dq_dmy = z * R[2,1]
+    dqX_dt0x = m.R[1,1]
+    dqX_dt0y = m.R[2,1]
+    dq_dmx = z * m.R[1,1]
+    dq_dmy = z * m.R[2,1]
     return dqX_dt0x, dqX_dt0y, dq_dmx, dq_dmy
 end
     

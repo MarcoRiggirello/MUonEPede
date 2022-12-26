@@ -18,7 +18,7 @@ Passive transform of the vector `q` in the global coordinates.
  
 """
 function local_to_global(q::StaticVector{3}, m::MUonEModule)
-	return m.R * q + m.r0
+    return m.R * q + m.r0
 end
 
 """
