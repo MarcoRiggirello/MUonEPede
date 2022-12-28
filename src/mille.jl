@@ -5,7 +5,7 @@ function rmeas(strip_X, strip_Y, z, m, t)
     return mlhit[1] - elhit[1]
 end
 
-function derlc(z::Real, m::MUonEModule, t::Track)
+function derlc(z::Real, m::MUonEModule)
     dqX_dt0x = m.R[1,1]
     dqX_dt0y = m.R[2,1]
     dq_dmx = z * m.R[1,1]
@@ -52,7 +52,7 @@ function mille!(glder::AbstractVector, inder::AbstractVector, strip_X, strip_Y, 
     glder[o+1] = rmeas(strip_X, strip_Y, z, m, t)
     inder[o+1] = zero(Int32)
 
-    glder[o+2:o+5] .= derlc(z, m, t)
+    glder[o+2:o+5] .= derlc(z, m)
     inder[o+2:o+5] .= 1,2,3,4
 
     glder[o+6] = 1.1 # sigma -- TO BE CHECKED

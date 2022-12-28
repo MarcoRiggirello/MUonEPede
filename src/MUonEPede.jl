@@ -7,12 +7,16 @@ module MUonEPede
 
 using LinearAlgebra, Rotations, StaticArrays
 using UnROOT, FortranFiles, EzXML
+using PythonCall
 using ProgressBars
+
+ROOT = pyimport("ROOT")
 
 export MUonEModule, Track
 export strip_to_local, local_to_global, global_to_local
 export intersection, interpolate
 export getmodules, generatebin, generatebinmc
+export residuals
 
 include("types.jl")
 include("io.jl")
@@ -21,5 +25,6 @@ include("mille.jl")
 include("transforms.jl")
 
 include("montecarlo.jl")
+include("residuals.jl")
 
 end

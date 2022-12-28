@@ -11,6 +11,22 @@ Parameter
 143 0.0 -1.0
 153 0.0 -1.0
 
+! Position X fixed for modules 0,1,4,5
+101 0.0 -1.0
+111 0.0 -1.0
+141 0.0 -1.0
+151 0.0 -1.0
+
+! Position Y fixed for modules 0,1,4,5
+102 0.0 -1.0
+112 0.0 -1.0
+142 0.0 -1.0
+152 0.0 -1.0
+
+! Position X and Y fixed for V module
+131 0.0 -1.0
+132 0.0 -1.0
+
 ! Rotations fixed
 104 0.0 -1.0
 114 0.0 -1.0
@@ -32,6 +48,12 @@ Parameter
 136 0.0 -1.0
 146 0.0 -1.0
 156 0.0 -1.0
+
+! U measurement is sensible only in x+y direction
+! not x-y.
+Constraint 0
+121 1.0
+122 1.0
 
 Method inversion 5 0.1
 !outlierdownweighting 4
