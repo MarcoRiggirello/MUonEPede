@@ -65,3 +65,25 @@ computes the track point at a given global coordinate `z`.
 function (t::Track)(z::Real)
     return t.t0 + z * t.et
 end
+
+"""
+
+    Stub{T}(localX, localY, bend, link)
+    Stub(localX, localY, bend, link)
+    Stub(;bend, link, localX, localY)
+
+The stub data structure.
+
+#Arguments
+to be completed
+"""
+struct Stub{T<:Real}
+    localX::T
+    localY::T
+    bend::T
+    link::Integer
+end
+
+Stub(localX::Real, localY::Real, bend::Real, link) = Stub(promote(localX, localY, bend)..., link)
+
+Stub(;bend, link, localX, localY) = Stub(localX, localY, bend, link)

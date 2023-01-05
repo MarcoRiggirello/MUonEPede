@@ -40,17 +40,15 @@ and the XML structure file.
 - `ofname::String`: name of the fortran binary output file.
 """
 function generatebin(; ifname::String, mfname::String, ofname::String)
-    tree = LazyTree(ROOTFile(ifname), "Cereal", ["Link", "LocalX", "LocalY"])
+    tree = LazyTree(ROOTFile(ifname), "Cereal", ["LocalX", "LocalY", "Link", "Bend"])
     ffile = FortranFile(ofname, "w")
     modules = getmodules(mfname)
     
-    # service arrays
-    ix = MVector{6, Int32}(undef)
-    strips_X = MVector{6, Float32}(undef)
-    strips_Y = MVector{6, Float32}(undef)
+    # service array
+    stubs = Vector{Stub{Float32}}(undef, 6)
 
     # see https://gitlab.desy.de/claus.kleinwort/millepede-ii/-/blob/main/mille.f90#L27
-    S = 73 # (1 rmeas + 1 sigma + 4 lder + 6 gder) * 6 measurements + 1 line of zeros
+    S = 145 # (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
     glder = Vector{Float32}(undef, S)
     inder = Vector{Int32}(undef, S)
 
@@ -62,24 +60,22 @@ function generatebin(; ifname::String, mfname::String, ofname::String)
         if length(links) != 6
             continue
         end
-        sortperm!(ix, links)
         # solo 6 hit da tutti e 6 i moduli
-        if links[ix] != [i for i in 0:5]
+        if sort(links) != [i for i in 0:5]
             continue
         end
-        strips_X[1:6] = event.LocalX
-        strips_Y[1:6] = event.LocalY
-        permute!(strips_X, ix)
-        permute!(strips_Y, ix)
+        for (l, x, y, b) in zip(links, event.LocalX, event.LocalY, event.Bend)
+            stubs[l+1] = Stub(x, y, b, l)
+        end
         # costruisci la traccia target
-        hit0 = local_to_global(strip_to_local(strips_X[1], strips_Y[1], modules[1]), modules[1])
-        hit1 = local_to_global(strip_to_local(strips_X[2], strips_Y[2], modules[2]), modules[2])
-        hit4 = local_to_global(strip_to_local(strips_X[5], strips_Y[5], modules[5]), modules[5])
-        hit5 = local_to_global(strip_to_local(strips_X[6], strips_Y[6], modules[6]), modules[6])
+        hit0 = local_to_global(strip_to_local(stubs[1], modules[1]), modules[1])
+        hit1 = local_to_global(strip_to_local(stubs[2], modules[2]), modules[2])
+        hit4 = local_to_global(strip_to_local(stubs[5], modules[5]), modules[5])
+        hit5 = local_to_global(strip_to_local(stubs[6], modules[6]), modules[6])
         track = interpolate(hit0, hit1, hit4, hit5)
         # mille() per ogni hit
-        for (sx, sy, m) in zip(strips_X, strips_Y, modules)
-            mille!(glder, inder, sx, sy, m, track)
+        for (s, m) in zip(stubs, modules)
+            mille!(glder, inder, s, m, track)
         end
         # scrivi su file
         write(ffile, Int32(S+S), glder, inder) # like ENDLE subroutine
