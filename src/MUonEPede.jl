@@ -7,6 +7,7 @@ module MUonEPede
 
 using LinearAlgebra, Rotations, StaticArrays
 using UnROOT, FortranFiles, EzXML
+using Optim
 using PythonCall
 using ProgressBars
 
