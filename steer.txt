@@ -1,6 +1,6 @@
 Fortranfiles
 !edit to insert the right name
-montecarlo.bin
+AlignmentResults/MonteCarlo/montecarlo.bin
 
 Parameter
 !position Z is fixed for each module
@@ -24,8 +24,8 @@ Parameter
 152 0.0 -1.0
 
 ! Position X and Y fixed for V module
-131 0.0 -1.0
-132 0.0 -1.0
+!131 0.0 -1.0
+!132 0.0 -1.0
 
 ! Rotations fixed
 104 0.0 -1.0
@@ -51,10 +51,10 @@ Parameter
 
 ! U measurement is sensible only in x+y direction
 ! not x-y.
-Constraint 0
-121 1.0
-122 1.0
+!Constraint 0
+!121 1.0
+!122 1.0
 
-Method inversion 5 0.1
+Method inversion 5 0.01
 !outlierdownweighting 4
 end

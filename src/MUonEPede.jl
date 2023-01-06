@@ -10,8 +10,6 @@ using UnROOT, FortranFiles, EzXML
 using PythonCall
 using ProgressBars
 
-ROOT = pyimport("ROOT")
-
 export MUonEModule, Track
 export strip_to_local, local_to_global, global_to_local
 export intersection, interpolate

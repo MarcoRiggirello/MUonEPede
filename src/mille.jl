@@ -25,7 +25,7 @@ function derlc(z::Real, m::MUonEModule)
 
     derlcX = [dqX_dt0x, dqX_dt0y, dqX_dmx, dqX_dmy]
     derlcY = [dqY_dt0x, dqY_dt0y, dqY_dmx, dqY_dmy]
-    return -derlcX, -derlcY 
+    return derlcX, derlcY 
 end
     
 function dergl(z, m, t)
@@ -65,11 +65,11 @@ function dergl(z, m, t)
 
     derglX = [dqX_dx0, dqX_dy0, dqX_dz0, dq_dθx[1], dq_dθy[1], dq_dθz[1]]
     derglY = [dqY_dx0, dqY_dy0, dqY_dz0, dq_dθx[2], dq_dθy[2], dq_dθz[2]]
-    return -derglX, -derglY
+    return derglX, derglY
 end
 
 function label(m::MUonEModule)
-    return [101, 102, 103, 104, 105, 106] + 10*m.id
+    return [i + 10*m.id for i in 101:106]
 end
 
 function mille!(glder::AbstractVector, inder::AbstractVector, s, m, t)
@@ -81,7 +81,7 @@ function mille!(glder::AbstractVector, inder::AbstractVector, s, m, t)
     derlcX, derlcY = derlc(z, m)
     derglX, derglY = dergl(z, m, t)
 
-    # Local X redisal and derivatives
+    # Local X residual and derivatives
     glder[o+1] = rmeasX
     inder[o+1] = zero(Int32)
 
