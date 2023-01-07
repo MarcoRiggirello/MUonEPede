@@ -24,7 +24,7 @@ function getmodules(fname::String)
 
         modules[i] = MUonEModule(x0, y0, z0, θx, θy, θz, id=id, name=name, spacing=spacing)
     end
-    return SVector{6}(modules)
+    return MUonEStation(modules...)
 end
 
 
@@ -68,11 +68,7 @@ function generatebin(; ifname::String, mfname::String, ofname::String)
             stubs[l+1] = Stub(x, y, b, l)
         end
         # costruisci la traccia target
-        hit0 = local_to_global(strip_to_local(stubs[1], modules[1]), modules[1])
-        hit1 = local_to_global(strip_to_local(stubs[2], modules[2]), modules[2])
-        hit4 = local_to_global(strip_to_local(stubs[5], modules[5]), modules[5])
-        hit5 = local_to_global(strip_to_local(stubs[6], modules[6]), modules[6])
-        track = interpolate(hit0, hit1, hit4, hit5)
+        track = trackfit(stubs, modules)
         # mille() per ogni hit
         for (s, m) in zip(stubs, modules)
             mille!(glder, inder, s, m, track)

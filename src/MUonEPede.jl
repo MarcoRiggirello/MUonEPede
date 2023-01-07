@@ -11,15 +11,17 @@ using Optim
 using PythonCall
 using ProgressBars
 
-export MUonEModule, Track
+export MUonEModule, MUonEStation, Stub, Track
 export strip_to_local, local_to_global, global_to_local
 export intersection, interpolate
+export trackfit
 export getmodules, generatebin, generatebinmc
 export residuals
 
 include("types.jl")
 include("io.jl")
 include("intersection.jl")
+include("fit.jl")
 include("mille.jl")
 include("transforms.jl")
 

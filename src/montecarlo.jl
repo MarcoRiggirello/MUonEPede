@@ -13,7 +13,7 @@ function local_to_stub(q::StaticVector{3,T}, m::MUonEModule) where {T<:Real}
     return Stub{T}(strip_X, strip_Y, 0.0, m.id)
 end
 
-function mcdata!(stubs, modules::StaticVector{6, MUonEModule})
+function mcdata!(stubs, modules::MUonEStation)
     x0 = randn(Float32)
     y0 = randn(Float32)
     mx = 1f-3 * randn(Float32)
@@ -55,11 +55,7 @@ function generatebinmc(; nevents::Integer, mcfname::String, nmfname::String, ofn
     for _ in ProgressBar(1:nevents)
         mcdata!(stubs, mcmodules)
         # costruisci la traccia target
-        hit0 = local_to_global(strip_to_local(stubs[1], nmmodules[1]), nmmodules[1])
-        hit1 = local_to_global(strip_to_local(stubs[2], nmmodules[2]), nmmodules[2])
-        hit4 = local_to_global(strip_to_local(stubs[5], nmmodules[5]), nmmodules[5])
-        hit5 = local_to_global(strip_to_local(stubs[6], nmmodules[6]), nmmodules[6])
-        track = interpolate(hit0, hit1, hit4, hit5)
+        track = trackfit(stubs, nmmodules)
         # mille() per ogni hit
         for (s, m) in zip(stubs, nmmodules)
             mille!(glder, inder, s, m, track)

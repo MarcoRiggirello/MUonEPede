@@ -10,7 +10,7 @@ function intersection(m::MUonEModule, t::Track)
     return (Z + (m.r0 - t.t0) ⋅ eZ) / (t.et ⋅eZ)
 end
 
-function interpolate(stubs::AbstractVector{Stub}, modules::AbstractVector{MUonEModule})
+function interpolate(stubs::AbstractVector{Stub{T}}, modules::MUonEStation) where T
 
     hit0 = local_to_global(strip_to_local(stubs[1], modules[1]), modules[1])
     hit1 = local_to_global(strip_to_local(stubs[2], modules[2]), modules[2])
@@ -28,5 +28,5 @@ function interpolate(stubs::AbstractVector{Stub}, modules::AbstractVector{MUonEM
     mx = Δx_40 / Δz_40
     my = Δy_51 / Δz_51
     
-    return Track(x0, y0, mx, my) 
+    return Track{T}(x0, y0, mx, my) 
 end

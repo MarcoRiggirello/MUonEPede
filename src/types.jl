@@ -1,4 +1,5 @@
 """
+
     MUonEModule{T<:Real}(x0, y0, z0, θx, θy, θz; id, name, spacing)
     
 A 2S module used in the beam test station.
@@ -41,29 +42,19 @@ function MUonEModule(x0::Real, y0::Real, z0::Real, θx::Real, θy::Real, θz::Re
 end
 
 """
-    Track{T<:Real}(x0::T, y0::T, mx::T, my::T)
-    
-The track model for the 160GeV muon beam.
+
+    MUonEStation{T}(x1, y1, u, v, x2, y2)
+    MUonEStation(x1, y1, u, v, x2, y2)
+
+A StaticArrays.FieldVector of MUonEModules defining a station.
 """
-struct Track{T<:Real}
-    t0::SVector{3, T}
-    et::SVector{3, T}
-    function Track{T}(x0, y0, mx, my) where {T}
-        return new{T}(SVector{3, T}(x0, y0, zero(T)), SVector{3, T}(mx, my, one(T)))
-    end
-end
-
-Track(x0::T, y0::T, mx::T, my::T) where {T<:Real} = Track{T}(x0, y0, mx, my)
-
-Track(x0::Real, y0::Real, mx::Real, my::Real) = Track(promote(x0, y0, mx, my)...)
-
-"""
-    (t::Track)(z::Real)
-
-computes the track point at a given global coordinate `z`.
-"""
-function (t::Track)(z::Real)
-    return t.t0 + z * t.et
+struct MUonEStation{T} <: FieldVector{6, MUonEModule{T}}
+    x1::MUonEModule{T}
+    y1::MUonEModule{T}
+    u::MUonEModule{T}
+    v::MUonEModule{T}
+    x2::MUonEModule{T}
+    y2::MUonEModule{T}
 end
 
 """
@@ -87,3 +78,32 @@ end
 Stub(localX::Real, localY::Real, bend::Real, link) = Stub(promote(localX, localY, bend)..., link)
 
 Stub(;bend, link, localX, localY) = Stub(localX, localY, bend, link)
+
+"""
+
+    Track{T<:Real}(x0::T, y0::T, mx::T, my::T)
+    
+The track model for the 160GeV muon beam.
+"""
+struct Track{T<:Real}
+    t0::SVector{3, T}
+    et::SVector{3, T}
+    function Track{T}(x0, y0, mx, my) where {T}
+        return new{T}(SVector{3, T}(x0, y0, zero(T)), SVector{3, T}(mx, my, one(T)))
+    end
+end
+
+Track(x0::T, y0::T, mx::T, my::T) where {T<:Real} = Track{T}(x0, y0, mx, my)
+
+Track(x0::Real, y0::Real, mx::Real, my::Real) = Track(promote(x0, y0, mx, my)...)
+
+"""
+
+    (t::Track)(z::Real)
+
+computes the track point at a given global coordinate `z`.
+"""
+function (t::Track)(z::Real)
+    return t.t0 + z * t.et
+end
+
