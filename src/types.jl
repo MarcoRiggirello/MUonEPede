@@ -49,12 +49,12 @@ end
 A StaticArrays.FieldVector of MUonEModules defining a station.
 """
 struct MUonEStation{T} <: FieldVector{6, MUonEModule{T}}
-    x1::MUonEModule{T}
-    y1::MUonEModule{T}
-    u::MUonEModule{T}
-    v::MUonEModule{T}
-    x2::MUonEModule{T}
-    y2::MUonEModule{T}
+    x_l0::MUonEModule{T}
+    y_l1::MUonEModule{T}
+    u_l2::MUonEModule{T}
+    v_l3::MUonEModule{T}
+    x_l4::MUonEModule{T}
+    y_l5::MUonEModule{T}
 end
 
 """
@@ -78,6 +78,19 @@ end
 Stub(localX::Real, localY::Real, bend::Real, link) = Stub(promote(localX, localY, bend)..., link)
 
 Stub(;bend, link, localX, localY) = Stub(localX, localY, bend, link)
+
+mutable struct StubSet{T} <: FieldVector{6, Stub{T}}
+    s_l0::Stub{T}
+    s_l1::Stub{T}
+    s_l2::Stub{T}
+    s_l3::Stub{T}
+    s_l4::Stub{T}
+    s_l5::Stub{T}
+    StubSet{T}(s0, s1, s2, s3, s4, s5) where T<:Real = new{T}(s0, s1, s2, s3, s4, s5)
+    StubSet{T}() where T<:Real = new{T}()
+end
+
+StubSet(s0::T, s1::T, s2::T, s3::T, s4::T, s5::T) where T<:Real = StubSet{T}(s0, s1, s2, s3, s4, s5)
 
 """
 

@@ -1,5 +1,6 @@
-function residuals(; nevents::Integer, mcfname::String, nmfname::String, histfname::String, histtitle="residuals")
+function residuals(; nevents::Integer, mcfname::String, nmfname::String, histtitle::String)
     ROOT = pyimport("ROOT")
+    histname = ("X1", "Y1", "U", "V", "X2", "Y2")
 
     rootfile = ROOT.TFile(histfname, "recreate")
     axislabels = ";measured hit - expected hit [cm]; #Events/0.001cm"
@@ -9,7 +10,7 @@ function residuals(; nevents::Integer, mcfname::String, nmfname::String, histfna
     nmmodules = getmodules(nmfname)
     
     # service arrays
-    stubs = Vector{Stub{Float32}}(undef, 6)
+    stubs = StubSet{Float32}()
 
     for _ in ProgressBar(1:nevents)
         mcdata!(stubs, mcmodules)

@@ -45,8 +45,8 @@ function generatebin(; ifname::String, mfname::String, ofname::String)
     modules = getmodules(mfname)
     
     # service array
-    stubs = Vector{Stub{Float32}}(undef, 6)
-
+    stubs = StubSet{Float32}()
+    
     # see https://gitlab.desy.de/claus.kleinwort/millepede-ii/-/blob/main/mille.f90#L27
     S = 145 # (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
     glder = Vector{Float32}(undef, S)

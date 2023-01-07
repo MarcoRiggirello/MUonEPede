@@ -13,7 +13,7 @@ function local_to_stub(q::StaticVector{3,T}, m::MUonEModule) where {T<:Real}
     return Stub{T}(strip_X, strip_Y, 0.0, m.id)
 end
 
-function mcdata!(stubs, modules::MUonEStation)
+function mcdata!(stubs::StubSet, modules::MUonEStation)
     x0 = randn(Float32)
     y0 = randn(Float32)
     mx = 1f-3 * randn(Float32)
@@ -43,7 +43,7 @@ function generatebinmc(; nevents::Integer, mcfname::String, nmfname::String, ofn
     nmmodules = getmodules(nmfname)
     
     # service array
-    stubs = Vector{Stub{Float32}}(undef, 6)
+    stubs = StubSet{Float32}()
 
     # see https://gitlab.desy.de/claus.kleinwort/millepede-ii/-/blob/main/mille.f90#L27
     S = 145 # (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
