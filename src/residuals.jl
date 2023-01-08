@@ -1,7 +1,7 @@
 function residualsmc(; nevents::Integer, mcfname::String, nmfname::String, title::String)
     ROOT = pyimport("ROOT")
     
-    axislabels = ";(measured LocalX - fitted LocalX) [cm]; #Events/0.001cm"
+    axislabels = ";(measured LocalX - fitted LocalX) [cm]; #Events/3 um"
     
     link = ["0", "1", "2", "3", "4", "5"]
     type = ["X", "Y", "U", "V", "X", "Y"]
@@ -11,7 +11,7 @@ function residualsmc(; nevents::Integer, mcfname::String, nmfname::String, title
 
     for (l, t) in zip(link, type)
         histtitle = title * " - Link: " * l * " - Module type: " * t * " (MC)"
-        push!(hists, ROOT.TH1D("residuals"*l*t, histtitle*axislabels, 400, -0.2, 0.2))
+        push!(hists, ROOT.TH1D("residuals"*l*t, histtitle*axislabels, 500, -0.05, 0.1))
     end
     
     mcmodules = getmodules(mcfname)
