@@ -16,7 +16,7 @@ export strip_to_local, local_to_global, global_to_local
 export intersection, interpolate
 export trackfit
 export getmodules, generatebin, generatebinmc
-export residuals
+export residualsmc
 
 include("types.jl")
 include("io.jl")
