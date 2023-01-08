@@ -3,7 +3,41 @@ Fortranfiles
 AlignmentResults/MonteCarlo/montecarlo.bin
 
 Parameter
-!position Z is fixed for each module
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! LABEL CONVENTION REMINDER                       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! most significant digit: station number (only 1) !!!
+!!!                                                 !!!
+!!! middle digit: module number a.k.a. LinkID       !!!
+!!!                                                 !!!
+!!! least significant digit: module parameter       !!!
+!!!                          1: PositionX           !!!
+!!!                          2: PositionY           !!! 
+!!!                          3: PositionZ           !!! 
+!!!                          4: RotationX           !!! 
+!!!                          5: RotationY           !!! 
+!!!                          6: RotationZ           !!! 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Comment/uncomment one of the next lines if you
+! want to unlock/lock some degree of freedom
+
+! PositionX
+101 0.0 -1.0
+111 0.0 -1.0
+!121 0.0 -1.0
+!131 0.0 -1.0
+141 0.0 -1.0
+151 0.0 -1.0
+
+! PositionY
+102 0.0 -1.0
+112 0.0 -1.0
+!122 0.0 -1.0
+!132 0.0 -1.0
+142 0.0 -1.0
+152 0.0 -1.0
+
+! PositionZ
 103 0.0 -1.0
 113 0.0 -1.0
 123 0.0 -1.0
@@ -11,37 +45,23 @@ Parameter
 143 0.0 -1.0
 153 0.0 -1.0
 
-! Position X fixed for modules 0,1,4,5
-101 0.0 -1.0
-111 0.0 -1.0
-141 0.0 -1.0
-151 0.0 -1.0
-
-! Position Y fixed for modules 0,1,4,5
-102 0.0 -1.0
-112 0.0 -1.0
-142 0.0 -1.0
-152 0.0 -1.0
-
-! Position X and Y fixed for V module
-!131 0.0 -1.0
-!132 0.0 -1.0
-
-! Rotations fixed
+! RotationX
 104 0.0 -1.0
-114 0.0 -1.0
+!114 0.0 -1.0
 124 0.0 -1.0
 134 0.0 -1.0
 144 0.0 -1.0
-154 0.0 -1.0
+!154 0.0 -1.0
 
-105 0.0 -1.0
+! RotationY
+!105 0.0 -1.0
 115 0.0 -1.0
 125 0.0 -1.0
 135 0.0 -1.0
-145 0.0 -1.0
+!145 0.0 -1.0
 155 0.0 -1.0
 
+! RotationZ
 106 0.0 -1.0
 116 0.0 -1.0
 126 0.0 -1.0
@@ -49,12 +69,6 @@ Parameter
 146 0.0 -1.0
 156 0.0 -1.0
 
-! U measurement is sensible only in x+y direction
-! not x-y.
-!Constraint 0
-!121 1.0
-!122 1.0
-
-Method inversion 5 0.01
-!outlierdownweighting 4
+Method diagonalization 5 0.01
+outlierdownweighting 4
 end
