@@ -28,7 +28,25 @@ function getmodules(fname::String)
 end
 
 
+function selectevent!(stubs::StubSet, event)
+        links = event.Link
+        # filtra gli eventi con 6 hit
+        if length(links) != 6
+            return false
+        end
+        # solo 6 hit da tutti e 6 i moduli
+        if sort(links) != [i for i in 0:5]
+            return false
+        end
+        for (l, x, y, b) in zip(links, event.LocalX, event.LocalY, event.Bend)
+            stubs[l+1] = Stub(x, y, b, l)
+        end
+        return true
+end
+
+
 """
+    
     generatebin(; ifname::String, mfname::String, ofname::String)
 
 Returns a Fortran binary file using as input a MUonE NTuple (vector format)
@@ -55,20 +73,12 @@ function generatebin(; ifname::String, mfname::String, ofname::String)
     glder[1] = zero(Float32)
     inder[1] = zero(Int32)
     for event in ProgressBar(tree)
-        links = event.Link
-        # filtra gli eventi con 6 hit
-        if length(links) != 6
+        s = selectevent!(stubs, event)
+        if !s
             continue
-        end
-        # solo 6 hit da tutti e 6 i moduli
-        if sort(links) != [i for i in 0:5]
-            continue
-        end
-        for (l, x, y, b) in zip(links, event.LocalX, event.LocalY, event.Bend)
-            stubs[l+1] = Stub(x, y, b, l)
         end
         # costruisci la traccia target
-        track = trackfit(stubs, modules)
+        track, _ = trackfit(stubs, modules)
         # mille() per ogni hit
         for (s, m) in zip(stubs, modules)
             mille!(glder, inder, s, m, track)
@@ -77,4 +87,54 @@ function generatebin(; ifname::String, mfname::String, ofname::String)
         write(ffile, Int32(S+S), glder, inder) # like ENDLE subroutine
     end
     close(ffile)
+end
+
+
+function residuals(; ifname::String , mfname::String, title::String)
+    ROOT = pyimport("ROOT")
+    
+    axislabels = "(LocalX_{pred} - LocalX_{hit}) [#mu m]; #Events/5 #mu m"
+    
+    link = ["0", "1", "2", "3", "4", "5"]
+    type = ["X", "Y", "U", "V", "X", "Y"]
+    res = zeros(Float32, 6)
+
+    tree = LazyTree(ROOTFile(ifname), "Cereal", ["LocalX", "LocalY", "Link", "Bend"])
+    rootfile = ROOT.TFile(replace(title, " " => "_", "-" => "_")*".root", "recreate")
+
+    hists = []
+    histchi2 = ROOT.TH1D("chi2", title*" - #chi^2; #chi^2/ndof; #Events", 200, 0, 20)
+    histmedian = ROOT.TH1D("median", title * "; median" * axislabels, 400, -1000, 1000)
+
+    for (l, t) in zip(link, type)
+        histtitle = title * " - Link: " * l * " - Module type: " * t * ";"
+        push!(hists, ROOT.TH1D("residuals"*l*t, histtitle*axislabels, 400, -1000, 1000))
+    end
+    
+    modules = getmodules(mfname)
+    
+    stubs = StubSet{Float32}()
+
+    for event in ProgressBar(tree)
+        s = selectevent!(stubs, event)
+        if !s
+            continue
+        end
+        track, chi2 = trackfit(stubs, modules)
+        histchi2.Fill(chi2/8)
+        for (i, s, m, h) in zip(1:6, stubs, modules, hists)
+            z = intersection(m, track)
+            res[i] = -10000 * rmeas(s, z, m, track)[1] #convert in micrometers
+            h.Fill(res[i])
+        end
+        histmedian.Fill(median(res))
+    end
+
+    histmedian.Write()
+    histchi2.Write()
+    for h in hists
+        h.Write()
+    end
+
+    rootfile.Close()
 end

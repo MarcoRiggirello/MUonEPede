@@ -65,12 +65,10 @@ function trackfit(stubs::StubSet, modules::MUonEStation)
     #g!(G, x) = gradient!(G, stubs, modules, Track(x...))
     fg!(F, G, x) = chisquare_gradient!(F, G, stubs, modules, Track(x...))
 
-    popt = Optim.minimizer(optimize(#f,
-                                    #g!,
-                                    Optim.only_fg!(fg!),
-                                    p_0,
-                                    BFGS(linesearch = BackTracking())))
+    results = optimize(Optim.only_fg!(fg!), p_0, BFGS(linesearch = BackTracking()))
 
-    return Track(popt...)
+    popt = Optim.minimizer(results)
+    chi2 = Optim.minimum(results)
+    return Track(popt...), chi2
 end
 
