@@ -1,8 +1,8 @@
 @testset "transforms" begin
     mu = MUonEModule(0,0,12,0,0.233,pi; name="dummyU", id=0, spacing=4.0)
     my = MUonEModule(0,0,0,-0.233,pi,pi/2; name="dummyY", id=1, spacing=1.8)
-    lu = strip_to_local(500, 0.25, mu)
-    ly = strip_to_local(100, 0.75, my)
+    lu = strip_to_local(Stub(500, 0.25, 0, 0), mu)
+    ly = strip_to_local(Stub(100, 0.75, 0, 1), my)
     
     @test lu.z ≈ -2.0
     @test ly.z ≈ -0.9
