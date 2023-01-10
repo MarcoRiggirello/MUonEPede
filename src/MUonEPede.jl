@@ -13,12 +13,9 @@ using Optim, LineSearches
 using PythonCall
 using ProgressBars
 
-export MUonEModule, MUonEStation, Stub, Track
-export strip_to_local, local_to_global, global_to_local
-export intersection, interpolate
-export trackfit
-export getmodules, generatebin, generatebinmc
-export residualsmc
+export MUonEModule, MUonEStation, Stub, StubSet, Track
+export generatebin, generatebinmc
+export residuals, residualsmc
 
 include("types.jl")
 include("io.jl")

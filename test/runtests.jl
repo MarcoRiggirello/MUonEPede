@@ -5,7 +5,7 @@ using .MUonEPede
 using Test
 using StaticArrays
 
-modules = getmodules("../MUonEStructure_December2022.xml")
+modules = MUonEPede.getmodules("../MUonEStructure_December2022.xml")
 
 include("intersection_test.jl")
 #include("mille_test.jl")
