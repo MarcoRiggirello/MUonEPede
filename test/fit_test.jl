@@ -1,3 +1,4 @@
+using Rotations: Random
 @testset "fit" begin
     t = Track(-1.1,-1.2,0.1,0.2)
     z = MUonEPede.intersection.(modules, [t])
@@ -7,4 +8,17 @@
 
     @test t.t0 ≈ tt.t0  rtol=1e-3
     @test t.et ≈ tt.et  rtol=1e-3
+
+    #ss = StubSet{Float32}()
+    #Random.seed!(42)
+    #MUonEPede.mcdata!(ss, modules)
+    p_0 = [0.,0.,0.,0.]
+
+    fg!(F, G, x) = MUonEPede.chisquare_gradient!(F, G, ss, modules, Track(x...))
+    results = optimize(Optim.only_fg!(fg!), p_0, BFGS(linesearch = BackTracking()))
+    popt = Optim.minimizer(results)
+    ttt = Track(popt...)
+
+    @test ttt.t0 ≈ tt.t0  rtol=1e-4
+    @test ttt.et ≈ tt.et  rtol=1e-4
 end

@@ -4,6 +4,7 @@ using .MUonEPede
 
 using Test
 using StaticArrays
+using Optim, LineSearches
 
 modules = MUonEPede.getmodules("../MUonEStructure_December2022.xml")
 
