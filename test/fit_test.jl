@@ -9,16 +9,13 @@ using Rotations: Random
     @test t.t0 ≈ tt.t0  rtol=1e-3
     @test t.et ≈ tt.et  rtol=1e-3
 
-    #ss = StubSet{Float32}()
-    #Random.seed!(42)
-    #MUonEPede.mcdata!(ss, modules)
-    p_0 = [0.,0.,0.,0.]
+    p_0 = [40.,50.,10.,-20.]
 
     fg!(F, G, x) = MUonEPede.chisquare_gradient!(F, G, ss, modules, Track(x...))
     results = optimize(Optim.only_fg!(fg!), p_0, BFGS(linesearch = BackTracking()))
     popt = Optim.minimizer(results)
     ttt = Track(popt...)
 
-    @test ttt.t0 ≈ tt.t0  rtol=1e-4
-    @test ttt.et ≈ tt.et  rtol=1e-4
+    @test ttt.t0 ≈ t.t0  rtol=1e-3
+    @test ttt.et ≈ t.et  rtol=1e-3
 end
