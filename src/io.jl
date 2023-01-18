@@ -28,6 +28,33 @@ function getmodules(fname::String)
 end
 
 
+function applycorrections(fname::String, ms::MUonEStation)
+    millepederes = readdlm(fname, skipstart=1)
+    corrections = Vector{Float32}(millepederes[:,2])
+    modules = Vector{MUonEModule}(undef, 6) 
+    for (i, m) in enumerate(ms)
+        
+        x0, y0, z0 = m.r0
+        θx, θy, θz = Rotations.params(m.R) 
+        id = m.id
+        name = m.name
+        spacing = m.spacing
+        Δx0, Δy0, Δz0 = corrections[i:i+2]
+        Δθx, Δθy, Δθz = corrections[i+3:i+6]
+        modules[i] = MUonEModule(x0 - Δx0,
+                                 y0 - Δy0,
+                                 z0 - Δz0,
+                                 θx - Δθx,
+                                 θy - Δθy,
+                                 θz - Δθz,
+                                 id=id,
+                                 name=name,
+                                 spacing=spacing)
+    end
+    return MUonEStation(modules...)
+end
+     
+
 function selectevent!(stubs::StubSet, event)
         links = event.Link
         # filtra gli eventi con 6 hit
@@ -47,21 +74,24 @@ end
 
 """
     
-    generatebin(; ifname::String, mfname::String, ofname::String)
+    generatebin(; ifname::String, mfname::String, ofname::String, cfname::String)
 
 Returns a Fortran binary file using as input a MUonE NTuple (vector format)
 and the XML structure file.
 
 #Arguments
-- `ifname::String`: name of the input root file;
-- `mfname::String`: name of the xml structure file; 
-- `ofname::String`: name of the fortran binary output file.
+- `ifname`: name of the input root file;
+- `mfname`: name of the xml structure file; 
+- `ofname`: name of the fortran binary output file;
+- `cfname`: name of the millepede text correction file (optional).
 """
-function generatebin(; ifname::String, mfname::String, ofname::String)
+function generatebin(; ifname::String, mfname::String, ofname::String, cfname=nothing)
     tree = LazyTree(ROOTFile(ifname), "Cereal", ["LocalX", "LocalY", "Link", "Bend"])
     ffile = FortranFile(ofname, "w")
     modules = getmodules(mfname)
-    
+    if cfname !== nothing
+        modules = applycorrections(cfname, modules)
+    end    
     # service array
     stubs = StubSet{Float32}()
     
@@ -90,7 +120,7 @@ function generatebin(; ifname::String, mfname::String, ofname::String)
 end
 
 
-function residuals(; ifname::String , mfname::String, title::String)
+function residuals(; ifname::String , mfname::String, title::String, cfname=nothing)
     ROOT = pyimport("ROOT")
     
     axislabels = "(LocalX_{pred} - LocalX_{hit}) [#mu m]; #Events/5 #mu m"
@@ -112,6 +142,9 @@ function residuals(; ifname::String , mfname::String, title::String)
     end
     
     modules = getmodules(mfname)
+    if cfname !== nothing
+        modules = applycorrections(cfname, modules)
+    end    
     
     stubs = StubSet{Float32}()
 
