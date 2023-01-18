@@ -120,51 +120,35 @@ function generatebin(; ifname::String, mfname::String, ofname::String, cfname=no
 end
 
 
-function residuals(; ifname::String , mfname::String, title::String, cfname=nothing)
+function residuals(; ifname::String , ofname::String, title::String, loweredge=[-200 for i in 1:6], upperedge=[200 for i in 1:6])
     ROOT = pyimport("ROOT")
     
-    axislabels = "(LocalX_{pred} - LocalX_{hit}) [#mu m]; #Events/5 #mu m"
+    axislabels = "Residuals [#mu m]; Events/#mu m"
     
     link = ["0", "1", "2", "3", "4", "5"]
     type = ["X", "Y", "U", "V", "X", "Y"]
     res = zeros(Float32, 6)
 
-    tree = LazyTree(ROOTFile(ifname), "Cereal", ["LocalX", "LocalY", "Link", "Bend"])
-    rootfile = ROOT.TFile(replace(title, " " => "_", "-" => "_")*".root", "recreate")
+    S = 145
+    uresidualindex = [i for i in 2:24:S]
+
+    binfile = FortranFile(ifname)
+    rootfile = ROOT.TFile(ofname, "recreate")
 
     hists = []
-    histchi2 = ROOT.TH1D("chi2", title*" - #chi^2; #chi^2/ndof; #Events", 200, 0, 20)
-    histmedian = ROOT.TH1D("median", title * "; median" * axislabels, 400, -1000, 1000)
 
-    for (l, t) in zip(link, type)
-        histtitle = title * " - Link: " * l * " - Module type: " * t * ";"
-        push!(hists, ROOT.TH1D("residuals"*l*t, histtitle*axislabels, 400, -1000, 1000))
+    for (l, t, le, ue) in zip(link, type, loweredge, upperedge)
+        histtitle = title * " - Link: " * l * " - Type: " * t * ";"
+        push!(hists, ROOT.TH1D("residuals"*l*t, histtitle*axislabels, le - ue, le, ue))
     end
     
-    modules = getmodules(mfname)
-    if cfname !== nothing
-        modules = applycorrections(cfname, modules)
-    end    
-    
-    stubs = StubSet{Float32}()
-
-    for event in ProgressBar(tree)
-        s = selectevent!(stubs, event)
-        if !s
-            continue
+    while !eof(binfile)
+        _, glder, _ = read(binfile, Int32, (Float32, Int32(S)), (Int32, Int32(S)))
+        for (i, h) in zip(uresidualindex, hists)
+            h.Fill(10000*glder[i])
         end
-        track, chi2 = trackfit(stubs, modules)
-        histchi2.Fill(chi2/8)
-        for (i, s, m, h) in zip(1:6, stubs, modules, hists)
-            z = intersection(m, track)
-            res[i] = -10000 * rmeas(s, z, m, track)[1] #convert in micrometers
-            h.Fill(res[i])
-        end
-        histmedian.Fill(median(res))
     end
 
-    histmedian.Write()
-    histchi2.Write()
     for h in hists
         h.Write()
     end
