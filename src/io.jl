@@ -39,8 +39,9 @@ function applycorrections(fname::String, ms::MUonEStation)
         id = m.id
         name = m.name
         spacing = m.spacing
-        Δx0, Δy0, Δz0 = corrections[i:i+2]
-        Δθx, Δθy, Δθz = corrections[i+3:i+6]
+        j = 6 * (i - 1)
+        Δx0, Δy0, Δz0 = corrections[j+1:j+3]
+        Δθx, Δθy, Δθz = corrections[j+4:j+6]
         modules[i] = MUonEModule(x0 - Δx0,
                                  y0 - Δy0,
                                  z0 - Δz0,
@@ -74,7 +75,7 @@ end
 
 """
     
-    generatebin(; ifname::String, mfname::String, ofname::String, cfname::String)
+    generatebin(; ifname::String, mfname::String, ofname::String, cfname::String, weight::Real)
 
 Returns a Fortran binary file using as input a MUonE NTuple (vector format)
 and the XML structure file.
@@ -83,14 +84,17 @@ and the XML structure file.
 - `ifname`: name of the input root file;
 - `mfname`: name of the xml structure file; 
 - `ofname`: name of the fortran binary output file;
-- `cfname`: name of the millepede text correction file (optional).
+- `cfname`: name of the millepede text correction file (optional);
+- `weight`: weight of the u sigma.
 """
-function generatebin(; ifname::String, mfname::String, ofname::String, cfname=nothing)
+function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=nothing, weight=1.0)
     tree = LazyTree(ROOTFile(ifname), "Cereal", ["LocalX", "LocalY", "Link", "Bend"])
     ffile = FortranFile(ofname, "w")
     modules = getmodules(mfname)
-    if cfname !== nothing
-        modules = applycorrections(cfname, modules)
+    if cfnames !== nothing
+        for c in cfnames
+            modules = applycorrections(c, modules)
+        end
     end    
     # service array
     stubs = StubSet{Float32}()
@@ -108,10 +112,10 @@ function generatebin(; ifname::String, mfname::String, ofname::String, cfname=no
             continue
         end
         # costruisci la traccia target
-        track, _ = trackfit(stubs, modules)
+        track = trackfit(stubs, modules, weight)
         # mille() per ogni hit
         for (s, m) in zip(stubs, modules)
-            mille!(glder, inder, s, m, track)
+            mille!(glder, inder, s, m, track, weight)
         end
         # scrivi su file
         write(ffile, Int32(S+S), glder, inder) # like ENDLE subroutine
@@ -120,14 +124,13 @@ function generatebin(; ifname::String, mfname::String, ofname::String, cfname=no
 end
 
 
-function residuals(; ifname::String , ofname::String, title::String, loweredge=[-200 for i in 1:6], upperedge=[200 for i in 1:6])
+function residuals(; ifname::String , ofname::String, title::String, loweredges=[-200 for i in 1:6], upperedges=[200 for i in 1:6])
     ROOT = pyimport("ROOT")
     
     axislabels = "Residuals [#mu m]; Events/#mu m"
     
     link = ["0", "1", "2", "3", "4", "5"]
     type = ["X", "Y", "U", "V", "X", "Y"]
-    res = zeros(Float32, 6)
 
     S = 145
     uresidualindex = [i for i in 2:24:S]
@@ -137,9 +140,9 @@ function residuals(; ifname::String , ofname::String, title::String, loweredge=[
 
     hists = []
 
-    for (l, t, le, ue) in zip(link, type, loweredge, upperedge)
-        histtitle = title * " - Link: " * l * " - Type: " * t * ";"
-        push!(hists, ROOT.TH1D("residuals"*l*t, histtitle*axislabels, le - ue, le, ue))
+    for (l, t, le, ue) in zip(link, type, loweredges, upperedges)
+        histtitle = title * "Link: " * l * " --- Type: " * t * ";"
+        push!(hists, ROOT.TH1D("residuals"*l*t, histtitle*axislabels, abs(ue - le), le, ue))
     end
     
     while !eof(binfile)
@@ -154,4 +157,32 @@ function residuals(; ifname::String , ofname::String, title::String, loweredge=[
     end
 
     rootfile.Close()
+end
+
+
+function eigengetter(fname::String)
+    f = open(fname)
+    strings = readlines(f)
+    eigenvalues = []
+    eigenvector = []
+    eigenvectors = []
+    for s in strings
+        ss = split(s, r" +", keepempty=false)
+        ll = length(ss)       
+        if ll == 5
+            append!(eigenvalues, parse(Float32, ss[end]))
+        elseif ll == 0
+            append!(eigenvectors, eigenvector)
+            eigenvector = []
+        elseif  ll == 6 || ll == 4 || ll == 2
+            for i in eachindex(ss)
+                if iseven(i)
+                    append!(eigenvector, parse(Float32, ss[i]))
+                end
+            end
+        else
+            throw("not expected.")
+        end
+    end
+    return Diagonal(eigenvalues), hcat(eigenvectors...)
 end

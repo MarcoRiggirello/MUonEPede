@@ -8,8 +8,8 @@ function rmeas(s, z, m, t)
     return rmeasX, rmeasY 
 end
 
-function sigma()
-    return 0.01f0, 1.5f0 
+function sigma(w)
+    return Float32(0.01f0*w), 1.5f0 
 end
 
 function derlc(z::Real, m::MUonEModule)
@@ -72,12 +72,12 @@ function label(m::MUonEModule)
     return [i + 10*m.id for i in 101:106]
 end
 
-function mille!(glder::AbstractVector, inder::AbstractVector, s, m, t)
+function mille!(glder::AbstractVector, inder::AbstractVector, s, m, t, w)
     z = intersection(m, t)
     o = 24*m.id + 1
 
     rmeasX, rmeasY = rmeas(s, z, m, t)
-    sigmaX, sigmaY = sigma()
+    sigmaX, sigmaY = sigma(w)
     derlcX, derlcY = derlc(z, m)
     derglX, derglY = dergl(z, m, t)
 
