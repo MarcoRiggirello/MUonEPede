@@ -42,12 +42,12 @@ function applycorrections(fname::String, ms::MUonEStation)
         j = 6 * (i - 1)
         Δx0, Δy0, Δz0 = corrections[j+1:j+3]
         Δθx, Δθy, Δθz = corrections[j+4:j+6]
-        modules[i] = MUonEModule(x0 - Δx0,
-                                 y0 - Δy0,
-                                 z0 - Δz0,
-                                 θx - Δθx,
-                                 θy - Δθy,
-                                 θz - Δθz,
+        modules[i] = MUonEModule(x0 + Δx0,
+                                 y0 + Δy0,
+                                 z0 + Δz0,
+                                 θx + Δθx,
+                                 θy + Δθy,
+                                 θz + Δθz,
                                  id=id,
                                  name=name,
                                  spacing=spacing)
@@ -88,7 +88,7 @@ and the XML structure file.
 - `weight`: weight of the u sigma.
 """
 function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=nothing, weight=1.0)
-    tree = LazyTree(ROOTFile(ifname), "Cereal", ["LocalX", "LocalY", "Link", "Bend"])
+    tree = LazyTree(ROOTFile(ifname), "cbmsim", ["LocalX", "LocalY", "Link", "Bend"])
     ffile = FortranFile(ofname, "w")
     modules = getmodules(mfname)
     if cfnames !== nothing
@@ -163,8 +163,8 @@ end
 function eigengetter(fname::String)
     f = open(fname)
     strings = readlines(f)
-    eigenvalues = []
-    eigenvector = []
+    eigenvalues = Vector{Float32}(undef,0)
+    eigenvector = Vector{Float32}(undef,0)
     eigenvectors = []
     for s in strings
         ss = split(s, r" +", keepempty=false)

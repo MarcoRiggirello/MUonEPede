@@ -13,15 +13,16 @@ function sigma(w)
 end
 
 function derlc(z::Real, m::MUonEModule)
-    dqX_dt0x = m.R[1,1]
-    dqX_dt0y = m.R[2,1]
-    dqX_dmx = z * m.R[1,1]
-    dqX_dmy = z * m.R[2,1]
+    Я = inv(m.R)
+    dqX_dt0x = Я[1,1]
+    dqX_dt0y = Я[2,1]
+    dqX_dmx = z * Я[1,1]
+    dqX_dmy = z * Я[2,1]
 
-    dqY_dt0x = m.R[1,2]
-    dqY_dt0y = m.R[2,2]
-    dqY_dmx = z * m.R[1,2]
-    dqY_dmy = z * m.R[2,2]
+    dqY_dt0x = Я[1,2]
+    dqY_dt0y = Я[2,2]
+    dqY_dmx = z * Я[1,2]
+    dqY_dmy = z * Я[2,2]
 
     derlcX = [dqX_dt0x, dqX_dt0y, dqX_dmx, dqX_dmy]
     derlcY = [dqY_dt0x, dqY_dt0y, dqY_dmx, dqY_dmy]
@@ -47,21 +48,22 @@ function dergl(z, m, t)
     ]
     θx, θy, θz = Rotations.params(m.R)
 
-    Rx = RotX(-θx)
-    Ry = RotY(-θy)
-    Rz = RotZ(-θz)
+    Яx = RotX(-θx)
+    Яy = RotY(-θy)
+    Яz = RotZ(-θz)
 
-    dqX_dx0 = m.R[1,1]
-    dqX_dy0 = m.R[2,1]
-    dqX_dz0 = m.R[3,1]
+    Я = inv(m.R)
+    dqX_dx0 = -Я[1,1]
+    dqX_dy0 = -Я[2,1]
+    dqX_dz0 = -Я[3,1]
 
-    dqY_dx0 = m.R[1,2]
-    dqY_dy0 = m.R[2,2]
-    dqY_dz0 = m.R[3,2]
+    dqY_dx0 = -Я[1,2]
+    dqY_dy0 = -Я[2,2]
+    dqY_dz0 = -Я[3,2]
 
-    dq_dθx = Rz * Ry * Sx * Rx * (hit - m.r0)
-    dq_dθy = Rz * Sy * Ry * Rx * (hit - m.r0)
-    dq_dθz = Sz * Rz * Ry * Rx * (hit - m.r0)
+    dq_dθx = Яz * Яy * Sx * Яx * (hit - m.r0)
+    dq_dθy = Яz * Sy * Яy * Яx * (hit - m.r0)
+    dq_dθz = Sz * Яz * Яy * Яx * (hit - m.r0)
 
     derglX = [dqX_dx0, dqX_dy0, dqX_dz0, dq_dθx[1], dq_dθy[1], dq_dθz[1]]
     derglY = [dqY_dx0, dqY_dy0, dqY_dz0, dq_dθx[2], dq_dθy[2], dq_dθz[2]]

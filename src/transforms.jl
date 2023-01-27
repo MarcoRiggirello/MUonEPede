@@ -51,7 +51,7 @@ function strip_to_local(s::Stub{T}, m::MUonEModule) where {T<:Real}
     strip_pitch = 0.009
     sensor_dimension_Y = 10
 
-    cm_X = (s.localX - 3 - nstrips) * strip_pitch / 2 # just a refactor of original code
+    cm_X = (s.localX - nstrips/2 + 1/2) * strip_pitch # just a refactor of original code
     cm_Y = (s.localY - 0.5) * sensor_dimension_Y
     return SVector{3, T}(cm_X, cm_Y, -1*m.spacing/2)
 end
