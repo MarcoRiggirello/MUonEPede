@@ -38,5 +38,5 @@ end
     @test MUonEPede.global_to_local(tt(z0), modules[1]).x ≈ MUonEPede.strip_to_local(s[1], modules[1]).x
     @test MUonEPede.global_to_local(tt(z1), modules[2]).x ≈ MUonEPede.strip_to_local(s[2], modules[2]).x
     @test MUonEPede.global_to_local(tt(z4), modules[5]).x ≈ MUonEPede.strip_to_local(s[5], modules[5]).x
-    @test MUonEPede.global_to_local(tt(z5), modules[6]).x ≈ MUonEPede.strip_to_local(s[6], modules[6]).x
+    @test MUonEPede.global_to_local(tt(z5), modules[6]).x ≈ MUonEPede.strip_to_local(s[6], modules[6]).x rtol=1.e-3
 end

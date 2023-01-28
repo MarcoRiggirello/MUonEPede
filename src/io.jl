@@ -1,7 +1,7 @@
 """
     getmodules(fname::String)
     
-Returns a `SVector` of `MUonEModules` constructed from an xml file.
+Returns a `MUonEStation` constructed from an xml file.
 See https://gitlab.cern.ch/muesli/daq-sw/daq-decode/-/blob/stdVec_bxAssembled/Structure/MUonEStructure_TB2022.xml
 """
 function getmodules(fname::String)
@@ -80,14 +80,18 @@ end
 Returns a Fortran binary file using as input a MUonE NTuple (vector format)
 and the XML structure file.
 
-#Arguments
+# Arguments
 - `ifname`: name of the input root file;
 - `mfname`: name of the xml structure file; 
 - `ofname`: name of the fortran binary output file;
 - `cfname`: name of the millepede text correction file (optional);
-- `weight`: weight of the u sigma.
+- `weight`: weight of the u sigma;
+- `cic`: if true, computes the contribution of the CIC information to the chisquare.
+
+# Note
+CAVE! The use of CIC information is, at present MUonEPede status, A WARRANTY OF BIASED ALIGNMENT.
 """
-function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=nothing, weight=1.0)
+function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=nothing, weight=1.0, cic=false)
     tree = LazyTree(ROOTFile(ifname), "cbmsim", ["LocalX", "LocalY", "Link", "Bend"])
     ffile = FortranFile(ofname, "w")
     modules = getmodules(mfname)
@@ -100,7 +104,9 @@ function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=n
     stubs = StubSet{Float32}()
     
     # see https://gitlab.desy.de/claus.kleinwort/millepede-ii/-/blob/main/mille.f90#L27
-    S = 145 # (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
+    # without CIC (1 rmeas + 1 sigma + 4 lder + 6 gder) * 6 measurements + 1 line of zeros
+    # with CIC (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
+    S = cic ? 145 : 73
     glder = Vector{Float32}(undef, S)
     inder = Vector{Int32}(undef, S)
 
@@ -115,7 +121,7 @@ function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=n
         track = trackfit(stubs, modules, weight)
         # mille() per ogni hit
         for (s, m) in zip(stubs, modules)
-            mille!(glder, inder, s, m, track, weight)
+            mille!(glder, inder, s, m, track, weight, cic=cic)
         end
         # scrivi su file
         write(ffile, Int32(S+S), glder, inder) # like ENDLE subroutine
@@ -124,7 +130,7 @@ function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=n
 end
 
 
-function residuals(; ifname::String , ofname::String, title::String, loweredges=[-200 for i in 1:6], upperedges=[200 for i in 1:6])
+function residuals(; ifname::String , ofname::String, title::String, loweredges=[-200 for i in 1:6], upperedges=[200 for i in 1:6], cic=false)
     ROOT = pyimport("ROOT")
     
     axislabels = "Residuals [#mu m]; Events/#mu m"
@@ -132,8 +138,9 @@ function residuals(; ifname::String , ofname::String, title::String, loweredges=
     link = ["0", "1", "2", "3", "4", "5"]
     type = ["X", "Y", "U", "V", "X", "Y"]
 
-    S = 145
-    uresidualindex = [i for i in 2:24:S]
+    s = cic ? 24 : 12
+    S = cic ? 145 : 73
+    uresidualindex = [i for i in 2:s:S]
 
     binfile = FortranFile(ifname)
     rootfile = ROOT.TFile(ofname, "recreate")

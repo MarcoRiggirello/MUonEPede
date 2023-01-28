@@ -9,7 +9,7 @@ function rmeas(s, z, m, t)
 end
 
 function sigma(w)
-    return Float32(0.01f0*w), 1.5f0 
+    return Float32(0.01*w), 1.5f0 
 end
 
 function derlc(z::Real, m::MUonEModule)
@@ -74,9 +74,10 @@ function label(m::MUonEModule)
     return [i + 10*m.id for i in 101:106]
 end
 
-function mille!(glder::AbstractVector, inder::AbstractVector, s, m, t, w)
+function mille!(glder::AbstractVector, inder::AbstractVector, s, m, t, w; cic=false)
     z = intersection(m, t)
-    o = 24*m.id + 1
+    l = cic ? 24 : 12
+    o = l * m.id + 1
 
     rmeasX, rmeasY = rmeas(s, z, m, t)
     sigmaX, sigmaY = sigma(w)
@@ -96,17 +97,19 @@ function mille!(glder::AbstractVector, inder::AbstractVector, s, m, t, w)
     glder[o+7:o+12] = derglX
     inder[o+7:o+12] = label(m)
 
-    # Local Y residual and derivatives
-    glder[o+13] = rmeasY
-    inder[o+13] = zero(Int32)
+    if cic
+        # Local Y residual and derivatives
+        glder[o+13] = rmeasY
+        inder[o+13] = zero(Int32)
 
-    glder[o+14:o+17] = derlcY
-    inder[o+14:o+17] .= 1,2,3,4
+        glder[o+14:o+17] = derlcY
+        inder[o+14:o+17] .= 1,2,3,4
 
-    glder[o+18] = sigmaY
-    inder[o+18] = zero(Int32)
+        glder[o+18] = sigmaY
+        inder[o+18] = zero(Int32)
 
-    glder[o+19:o+24] = derglY
-    inder[o+19:o+24] = label(m)
+        glder[o+19:o+24] = derglY
+        inder[o+19:o+24] = label(m)
+    end
 end
 

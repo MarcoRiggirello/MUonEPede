@@ -13,10 +13,10 @@ using PythonCall
 using ProgressBars
 
 export MUonEModule, MUonEStation, Stub, StubSet, Track
-export generatebin, generatebinmc
-export residuals, residualsmc
+export generatebin, residuals
 
 include("types.jl")
+
 include("io.jl")
 include("intersection.jl")
 include("fit.jl")
@@ -24,6 +24,5 @@ include("mille.jl")
 include("transforms.jl")
 
 include("montecarlo.jl")
-include("residuals.jl")
 
 end
