@@ -7,7 +7,7 @@ function local_to_stub(q::StaticVector{3,T}, m::MUonEModule) where {T<:Real}
     nstrips = 1016
     strip_pitch = 0.009
 
-    strip_X = q.x / strip_pitch + nstrips/2 - 1/2
+    strip_X = round(q.x / strip_pitch, digits=1, base=2) + nstrips/2 - 1/2
     strip_Y = q.y > 0 ? 0.75 : 0.25
     # we don't use the bend at the moment
     return Stub{T}(strip_X, strip_Y, 0.0, m.id)
