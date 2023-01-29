@@ -15,13 +15,13 @@ end
 function derlc(z::Real, m::MUonEModule)
     Я = inv(m.R)
     dqX_dt0x = Я[1,1]
-    dqX_dt0y = Я[2,1]
+    dqX_dt0y = Я[1,2]
     dqX_dmx = z * Я[1,1]
-    dqX_dmy = z * Я[2,1]
+    dqX_dmy = z * Я[1,2]
 
-    dqY_dt0x = Я[1,2]
+    dqY_dt0x = Я[2,1]
     dqY_dt0y = Я[2,2]
-    dqY_dmx = z * Я[1,2]
+    dqY_dmx = z * Я[2,1]
     dqY_dmy = z * Я[2,2]
 
     derlcX = [dqX_dt0x, dqX_dt0y, dqX_dmx, dqX_dmy]
@@ -54,12 +54,12 @@ function dergl(z, m, t)
 
     Я = inv(m.R)
     dqX_dx0 = -Я[1,1]
-    dqX_dy0 = -Я[2,1]
-    dqX_dz0 = -Я[3,1]
+    dqX_dy0 = -Я[1,2]
+    dqX_dz0 = -Я[1,3]
 
-    dqY_dx0 = -Я[1,2]
+    dqY_dx0 = -Я[2,1]
     dqY_dy0 = -Я[2,2]
-    dqY_dz0 = -Я[3,2]
+    dqY_dz0 = -Я[2,3]
 
     dq_dθx = Яz * Яy * Sx * Яx * (hit - m.r0)
     dq_dθy = Яz * Sy * Яy * Яx * (hit - m.r0)
