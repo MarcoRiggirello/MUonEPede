@@ -118,7 +118,7 @@ function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=n
             continue
         end
         # costruisci la traccia target
-        track = trackfit(stubs, modules, weight)
+        track = trackfit(stubs, modules, weight, cic=cic)
         # mille() per ogni hit
         for (s, m) in zip(stubs, modules)
             mille!(glder, inder, s, m, track, weight, cic=cic)

@@ -32,7 +32,7 @@ function mcdata!(stubs::StubSet, modules::MUonEStation; beamsize_x=1.0, beamsize
 end
 
 """
-    generatebinmc(; nevents::Integer, mcfname::String, nmfname::String, ofname::String, weight=1.0, beamsize_x=1.0, beamsize_y=1.0)
+    generatebinmc(; nevents::Integer, mcfname::String, nmfname::String, ofname::String, cfname=nothing, weight=1.0, beamsize_x=1.0, beamsize_y=1.0)
 
 Generate MonteCarlo data in a Fortran binary file using 
 as input the XML structure file.
@@ -42,6 +42,7 @@ as input the XML structure file.
 - `mcfname`: name of the xml structure file with the montecarlo truth;
 - `nmfnmae`: name of the xml structure file with nominal positions; 
 - `ofname`: name of the fortran binary output file;
+- `cfnames`: list of parameters correction (the expected syntax is the one of the typical millepede.res file);
 - `weight`: weight of sigma;
 - `cic`: use CIC information in chisquare;
 - `beamsize_x`: the x sigma of the beam (in cm);
@@ -72,7 +73,7 @@ function generatebinmc(; nevents::Integer, mcfname::String, nmfname::String, ofn
     for _ in ProgressBar(1:nevents)
         mcdata!(stubs, mcmodules, beamsize_x=beamsize_x, beamsize_y=beamsize_y)
         # costruisci la traccia target
-        track = trackfit(stubs, nmmodules, weight)
+        track = trackfit(stubs, nmmodules, weight, cic=cic)
         # mille() per ogni hit
         for (s, m) in zip(stubs, nmmodules)
             mille!(glder, inder, s, m, track, weight, cic=cic)
