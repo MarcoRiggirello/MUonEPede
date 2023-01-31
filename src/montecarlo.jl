@@ -3,14 +3,15 @@
 """
    Do the inverse of strip_to_local 
 """
-function local_to_stub(q::StaticVector{3,T}, m::MUonEModule) where {T<:Real}
+function local_to_stub(q_s::StaticVector{3,T}, q_c::StaticVector{3,T}, m::MUonEModule) where {T<:Real}
     nstrips = 1016
     strip_pitch = 0.009
 
-    strip_X = round(q.x / strip_pitch, digits=1, base=2) + nstrips/2 - 1/2
-    strip_Y = q.y > 0 ? 0.75 : 0.25
+    strip_X = round(q_s.x / strip_pitch, digits = 1, base = 2) + nstrips/2 - 1/2
+    strip_Y = q_s.y > 0 ? 0.75 : 0.25
+    bend = -round((q_c.x - q_s.x) / strip_pitch, digits = 1, base = 2)
     # we don't use the bend at the moment
-    return Stub{T}(strip_X, strip_Y, 0.0, m.id)
+    return Stub{T}(strip_X, strip_Y, bend, m.id)
 end
 
 function mcdata!(stubs::StubSet, modules::MUonEStation; beamsize_x=1.0, beamsize_y=1.0)
@@ -22,10 +23,13 @@ function mcdata!(stubs::StubSet, modules::MUonEStation; beamsize_x=1.0, beamsize
     
         t = Track{Float32}(x0, y0, mx, my)
         z = intersection.(modules, [t])
+        z_s = getindex.(z, 1)
+        z_c = getindex.(z, 2)
 
-        qq = global_to_local.(t.(z), modules)
-        if all(q -> abs(q[1] < 5), qq) && all(q -> abs(q[2] < 5), qq)
-            stubs[1:6] = local_to_stub.(qq, modules)
+        qq_s = global_to_local.(t.(z_s), modules)
+        qq_c = global_to_local.(t.(z_c), modules)
+        if all(q -> abs(q[1] < 5), qq_s) && all(q -> abs(q[2] < 5), qq_s)
+            stubs[1:6] = local_to_stub.(qq_s, qq_c, modules)
             break
         end
     end
@@ -62,9 +66,9 @@ function generatebinmc(; nevents::Integer, mcfname::String, nmfname::String, ofn
     stubs = StubSet{Float32}()
 
     # see https://gitlab.desy.de/claus.kleinwort/millepede-ii/-/blob/main/mille.f90#L27
-    # with CIC: (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
-    # without CIC: (1 rmeas + 1 sigma + 4 lder + 6 gder) * 6 measurements + 1 line of zeros
-    S = cic ? 145 : 73
+    # with CIC: (1 rmeas + 1 sigma + 4 lder + 6 gder) * 18 measurements + 1 line of zeros
+    # without CIC: (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
+    S = cic ? 217 : 145
     glder = Vector{Float32}(undef, S)
     inder = Vector{Int32}(undef, S)
 

@@ -2,12 +2,13 @@ function chisquare(stubs::StubSet, modules::MUonEStation, track::Track{T}, weigh
     Fx = zero(T)
     Fy = zero(T)
     for (s, m) in zip(stubs, modules)
-        z = intersection(m, track)
-        rx, ry = rmeas(s, z, m, track)
+        z, _ = intersection(m, track)
+        l, _ = stub_to_local(s, m)
+        rx, ry = rmeas(l, z, m, track)
         Fx += rx^2
         Fy += ry^2
     end
-    sx, sy = sigma(weight)
+    sx, sy, _ = sigma(weight)
     if cic
         return (Fx/sx^2 + Fy/sy^2)/2
     else
@@ -19,14 +20,15 @@ function gradient!(G, stubs::StubSet, modules::MUonEStation, track::Track{T}, we
     gx = zeros(T, 4)
     gy = zeros(T, 4)
     for (s, m) in zip(stubs, modules)
-        z = intersection(m, track)
-        rx, ry = rmeas(s, z, m, track)
+	z, _ = intersection(m, track)
+        l, _ = stub_to_local(s, m)
+        rx, ry = rmeas(l, z, m, track)
         dx, dy = derlc(z, m)
 
         gx -= dx * rx 
         gy -= dy * ry 
     end
-    sx, sy = sigma(weight)
+    sx, sy, _ = sigma(weight)
     if cic
         G .= gx/sx^2 + gy/sy^2
     else
@@ -38,10 +40,11 @@ function chisquare_gradient!(F, G, stubs::StubSet, modules::MUonEStation, track:
     zz = zeros(T, 6)
     rrx = zeros(T, 6)
     rry = zeros(T, 6)
-    vx, vy = sigma(weight).^2
+    vx, vy, _ = sigma(weight).^2
     for (i, s, m) in zip(1:6, stubs, modules)
-        zz[i] = intersection(m, track)
-        rrx[i], rry[i] = rmeas(s, zz[i], m, track)
+	zz[i], _ = intersection(m, track)
+        l, _ = stub_to_local(s, m)
+        rrx[i], rry[i] = rmeas(l, zz[i], m, track)
     end
     if G !== nothing
         gx = zeros(T, 4)

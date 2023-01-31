@@ -6,16 +6,17 @@ Computes the global coordinate `z` of the intersection point between a `Track` a
 """
 function intersection(m::MUonEModule, t::Track)
     _, _, eZ = local_axes(m)
-    Z = -1 * m.spacing/2
-    return (Z + (m.r0 - t.t0) ⋅ eZ) / (t.et ⋅eZ)
+    Z = m.spacing/2
+    return (-Z + (m.r0 - t.t0) ⋅ eZ) / (t.et ⋅eZ),
+           (Z + (m.r0 - t.t0) ⋅ eZ) / (t.et ⋅eZ)
 end
 
 function interpolate(stubs::StubSet{T}, modules::MUonEStation) where T
 
-    hit0 = local_to_global(strip_to_local(stubs[1], modules[1]), modules[1])
-    hit1 = local_to_global(strip_to_local(stubs[2], modules[2]), modules[2])
-    hit4 = local_to_global(strip_to_local(stubs[5], modules[5]), modules[5])
-    hit5 = local_to_global(strip_to_local(stubs[6], modules[6]), modules[6])
+    hit0 = local_to_global(stub_to_local(stubs[1], modules[1])[1], modules[1])
+    hit1 = local_to_global(stub_to_local(stubs[2], modules[2])[1], modules[2])
+    hit4 = local_to_global(stub_to_local(stubs[5], modules[5])[1], modules[5])
+    hit5 = local_to_global(stub_to_local(stubs[6], modules[6])[1], modules[6])
 
     Δx_40 = hit4.x - hit0.x
     Δy_51 = hit5.y - hit1.y

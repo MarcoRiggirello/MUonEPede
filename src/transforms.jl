@@ -32,9 +32,11 @@ function global_to_local(r::StaticVector{3}, m::MUonEModule)
 end
 
 """
-    strip_to_local(s::Stub, m::MUonEModule)
+
+    stub_to_local(s::Stub, m::MUonEModule)
     
 Conversion of module local coordinates from strip number to cm.
+Returns 2 SVectors: 1 from the seed layer and 1 from the correlation layer.
 
 # References
 See https://gitlab.cern.ch/muesli/daq-sw/daq-decode/-/blob/api/src/Converter.cpp
@@ -43,7 +45,7 @@ See https://gitlab.cern.ch/muesli/daq-sw/daq-decode/-/blob/api/src/Converter.cpp
 To ensure that the local frame is right handed, the cm_X output has an overall minus sign
 wrt the original converter.
 """
-function strip_to_local(s::Stub{T}, m::MUonEModule) where {T<:Real}
+function stub_to_local(s::Stub{T}, m::MUonEModule) where {T<:Real}
     if s.link != m.id
         throw("stub is from another module.")
     end
@@ -53,6 +55,8 @@ function strip_to_local(s::Stub{T}, m::MUonEModule) where {T<:Real}
 
     cm_X = (s.localX - nstrips/2 + 1/2) * strip_pitch # just a refactor of original code
     cm_Y = (s.localY - 0.5) * sensor_dimension_Y
-    return SVector{3, T}(cm_X, cm_Y, -1*m.spacing/2)
+    cm_b = s.bend * strip_pitch
+    return SVector{3, T}(cm_X, cm_Y, -m.spacing/2), 
+           SVector{3, T}(cm_X-cm_b, cm_Y, m.spacing/2)
 end
 

@@ -1,31 +1,26 @@
 # now with the mille data creation
-function rmeas(s, z, m, t)
-    mlhit = strip_to_local(s, m)
+function rmeas(l::SVector{3, T}, z, m, t) where T
     elhit = global_to_local(t(z), m)
-    
-    rmeasX = mlhit[1] - elhit[1]
-    rmeasY = mlhit[2] - elhit[2] 
+
+    rmeasX = l[1] - elhit[1]
+    rmeasY = l[2] - elhit[2] 
     return rmeasX, rmeasY 
 end
 
 function sigma(w)
-    return Float32(0.01*w), 1.5f0 
+    return Float32(0.003*w), 1.5f0, Float32(0.005*w) 
 end
 
 function derlc(z::Real, m::MUonEModule)
     Я = inv(m.R)
-    dqX_dt0x = Я[1,1]
-    dqX_dt0y = Я[1,2]
-    dqX_dmx = z * Я[1,1]
-    dqX_dmy = z * Я[1,2]
+    
+    dρ_dt0x = Я * @SVector [1, 0, 0]
+    dρ_dt0y = Я * @SVector [0, 1, 0]
+    dρ_dmx = z * Я * @SVector [1, 0, 0]
+    dρ_dmy = z * Я * @SVector [0, 1, 0]
 
-    dqY_dt0x = Я[2,1]
-    dqY_dt0y = Я[2,2]
-    dqY_dmx = z * Я[2,1]
-    dqY_dmy = z * Я[2,2]
-
-    derlcX = [dqX_dt0x, dqX_dt0y, dqX_dmx, dqX_dmy]
-    derlcY = [dqY_dt0x, dqY_dt0y, dqY_dmx, dqY_dmy]
+    derlcX = [dρ_dt0x[1], dρ_dt0y[1], dρ_dmx[1], dρ_dmy[1]]
+    derlcY = [dρ_dt0x[2], dρ_dt0y[2], dρ_dmx[2], dρ_dmy[2]]
     return derlcX, derlcY 
 end
     
@@ -53,20 +48,16 @@ function dergl(z, m, t)
     Яz = RotZ(-θz)
 
     Я = inv(m.R)
-    dqX_dx0 = -Я[1,1]
-    dqX_dy0 = -Я[1,2]
-    dqX_dz0 = -Я[1,3]
+    dρ_dx0 = -Я * @SVector [1, 0, 0]
+    dρ_dy0 = -Я * @SVector [0, 1, 0]
+    dρ_dz0 = -Я * @SVector [0, 0, 1]
 
-    dqY_dx0 = -Я[2,1]
-    dqY_dy0 = -Я[2,2]
-    dqY_dz0 = -Я[2,3]
+    dρ_dθx = Яz * Яy * Sx * Яx * (hit - m.r0)
+    dρ_dθy = Яz * Sy * Яy * Яx * (hit - m.r0)
+    dρ_dθz = Sz * Яz * Яy * Яx * (hit - m.r0)
 
-    dq_dθx = Яz * Яy * Sx * Яx * (hit - m.r0)
-    dq_dθy = Яz * Sy * Яy * Яx * (hit - m.r0)
-    dq_dθz = Sz * Яz * Яy * Яx * (hit - m.r0)
-
-    derglX = [dqX_dx0, dqX_dy0, dqX_dz0, dq_dθx[1], dq_dθy[1], dq_dθz[1]]
-    derglY = [dqY_dx0, dqY_dy0, dqY_dz0, dq_dθx[2], dq_dθy[2], dq_dθz[2]]
+    derglX = [dρ_dx0[1], dρ_dy0[1], dρ_dz0[1], dρ_dθx[1], dρ_dθy[1], dρ_dθz[1]]
+    derglY = [dρ_dx0[2], dρ_dy0[2], dρ_dz0[2], dρ_dθx[2], dρ_dθy[2], dρ_dθz[2]]
     return derglX, derglY
 end
 
@@ -75,16 +66,22 @@ function label(m::MUonEModule)
 end
 
 function mille!(glder::AbstractVector, inder::AbstractVector, s, m, t, w; cic=false)
-    z = intersection(m, t)
-    l = cic ? 24 : 12
+    z_s, z_c = intersection(m, t)
+    l_s, l_c = stub_to_local(s, m)
+    l = cic ? 36 : 24
     o = l * m.id + 1
 
-    rmeasX, rmeasY = rmeas(s, z, m, t)
-    sigmaX, sigmaY = sigma(w)
-    derlcX, derlcY = derlc(z, m)
-    derglX, derglY = dergl(z, m, t)
+    sigmaX, sigmaY, sigmaB = sigma(w)
+    
+    rmeasX, rmeasY = rmeas(l_s, z_s, m, t)
+    derlcX, derlcY = derlc(z_s, m)
+    derglX, derglY = dergl(z_s, m, t)
+    
+    rmeasB, _ = rmeas(l_c, z_c, m, t)
+    derlcB, _ = derlc(z_c, m)
+    derglB, _ = dergl(z_c, m, t)
 
-    # Local X residual and derivatives
+    # Seed layer Local X residual and derivatives
     glder[o+1] = rmeasX
     inder[o+1] = zero(Int32)
 
@@ -97,19 +94,32 @@ function mille!(glder::AbstractVector, inder::AbstractVector, s, m, t, w; cic=fa
     glder[o+7:o+12] = derglX
     inder[o+7:o+12] = label(m)
 
+    # Correlation layer LocalX residuals and derivatives
+    glder[o+13] = rmeasB
+    inder[o+13] = zero(Int32)
+
+    glder[o+14:o+17] = derlcB
+    inder[o+14:o+17] .= 1,2,3,4
+
+    glder[o+18] = sigmaB
+    inder[o+18] = zero(Int32)
+
+    glder[o+19:o+24] = derglB
+    inder[o+19:o+24] = label(m)
+
     if cic
-        # Local Y residual and derivatives
-        glder[o+13] = rmeasY
-        inder[o+13] = zero(Int32)
+        # Seed layer Local Y residualis and derivatives
+        glder[o+25] = rmeasY
+        inder[o+25] = zero(Int32)
 
-        glder[o+14:o+17] = derlcY
-        inder[o+14:o+17] .= 1,2,3,4
+        glder[o+26:o+29] = derlcY
+        inder[o+26:o+29] .= 1,2,3,4
 
-        glder[o+18] = sigmaY
-        inder[o+18] = zero(Int32)
+        glder[o+30] = sigmaY
+        inder[o+30] = zero(Int32)
 
-        glder[o+19:o+24] = derglY
-        inder[o+19:o+24] = label(m)
+        glder[o+31:o+36] = derglY
+        inder[o+31:o+36] = label(m)
     end
 end
 

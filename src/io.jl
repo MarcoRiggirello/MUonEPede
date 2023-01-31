@@ -104,9 +104,9 @@ function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=n
     stubs = StubSet{Float32}()
     
     # see https://gitlab.desy.de/claus.kleinwort/millepede-ii/-/blob/main/mille.f90#L27
-    # without CIC (1 rmeas + 1 sigma + 4 lder + 6 gder) * 6 measurements + 1 line of zeros
-    # with CIC (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
-    S = cic ? 145 : 73
+    # without CIC (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
+    # with CIC (1 rmeas + 1 sigma + 4 lder + 6 gder) * 18 measurements + 1 line of zeros
+    S = cic ? 217 : 145
     glder = Vector{Float32}(undef, S)
     inder = Vector{Int32}(undef, S)
 
@@ -138,8 +138,8 @@ function residuals(; ifname::String , ofname::String, title::String, loweredges=
     link = ["0", "1", "2", "3", "4", "5"]
     type = ["X", "Y", "U", "V", "X", "Y"]
 
-    s = cic ? 24 : 12
-    S = cic ? 145 : 73
+    s = cic ? 36 : 24
+    S = cic ? 217 : 145
     uresidualindex = [i for i in 2:s:S]
 
     binfile = FortranFile(ifname)
