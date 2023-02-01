@@ -41,20 +41,25 @@ function dergl(z, m, t)
         1  0  0;
         0  0  0
     ]
-    θx, θy, θz = Rotations.params(m.R)
+    # θx, θy, θz = Rotations.params(m.R)
 
-    Яx = RotX(-θx)
-    Яy = RotY(-θy)
-    Яz = RotZ(-θz)
+    # Яx = RotX(-θx)
+    # Яy = RotY(-θy)
+    # Яz = RotZ(-θz)
 
     Я = inv(m.R)
+
     dρ_dx0 = -Я * @SVector [1, 0, 0]
     dρ_dy0 = -Я * @SVector [0, 1, 0]
     dρ_dz0 = -Я * @SVector [0, 0, 1]
 
-    dρ_dθx = Яz * Яy * Sx * Яx * (hit - m.r0)
-    dρ_dθy = Яz * Sy * Яy * Яx * (hit - m.r0)
-    dρ_dθz = Sz * Яz * Яy * Яx * (hit - m.r0)
+    # dρ_dθx = Яz * Яy * Sx * Яx * (hit - m.r0)
+    # dρ_dθy = Яz * Sy * Яy * Яx * (hit - m.r0)
+    # dρ_dθz = Sz * Яz * Яy * Яx * (hit - m.r0)
+
+    dρ_dθx = -Я * (Sx * m.R) * Я * (hit - m.r0)
+    dρ_dθy = -Я * (Sy * m.R) * Я * (hit - m.r0)
+    dρ_dθz = -Я * (Sz * m.R) * Я * (hit - m.r0)
 
     derglX = [dρ_dx0[1], dρ_dy0[1], dρ_dz0[1], dρ_dθx[1], dρ_dθy[1], dρ_dθz[1]]
     derglY = [dρ_dx0[2], dρ_dy0[2], dρ_dz0[2], dρ_dθx[2], dρ_dθy[2], dρ_dθz[2]]
