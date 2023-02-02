@@ -8,7 +8,7 @@ function rmeas(l::SVector{3, T}, z, m, t) where T
 end
 
 function sigma(w)
-    return Float32(0.003*w), 1.5f0, Float32(0.005*w) 
+    return Float32(0.003*w), 1.5f0, Float32(0.01*w) 
 end
 
 function derlc(z::Real, m::MUonEModule)

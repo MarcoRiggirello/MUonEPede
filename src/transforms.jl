@@ -57,6 +57,6 @@ function stub_to_local(s::Stub{T}, m::MUonEModule) where {T<:Real}
     cm_Y = (s.localY - 0.5) * sensor_dimension_Y
     cm_b = s.bend * strip_pitch
     return SVector{3, T}(cm_X, cm_Y, -m.spacing/2), 
-           SVector{3, T}(cm_X-cm_b, cm_Y, m.spacing/2)
+           SVector{3, T}(cm_X+cm_b, cm_Y, m.spacing/2)
 end
 

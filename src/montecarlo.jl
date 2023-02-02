@@ -11,7 +11,7 @@ function local_to_stub(q_s::StaticVector{3,T}, q_c::StaticVector{3,T}, m::MUonEM
     strip_Y = q_s.y > 0 ? 0.75 : 0.25
     strip_c = round(q_c.x / strip_pitch, digits = 1, base = 2) + nstrips/2 - 1/2
     # bend = -round((q_c.x - q_s.x) / strip_pitch, digits = 1, base = 2)
-    bend = -(strip_c - strip_X)
+    bend = (strip_c - strip_X)
     # we don't use the bend at the moment
     return Stub{T}(strip_X, strip_Y, bend, m.id)
 end
