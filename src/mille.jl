@@ -8,7 +8,7 @@ function rmeas(l::SVector{3, T}, z, m, t) where T
 end
 
 function sigma(w)
-    return Float32(0.003*w), 1.5f0, Float32(0.01*w) 
+    return Float32(0.003*w), 1.5f0, Float32(0.003*w) 
 end
 
 function derlc(z::Real, m::MUonEModule)
@@ -45,21 +45,17 @@ function dergl(z, m, t)
 
     θx, θy, θz = Rotations.params(m.R)
 
-    Rx = RotX(θx)
-    Ry = RotY(θy)
-    Rz = RotZ(θz)
+    Яx = RotX(-θx)
+    Яy = RotY(-θy)
+    Яz = RotZ(-θz)
 
     dρ_dx0 = -Я * @SVector [1, 0, 0]
     dρ_dy0 = -Я * @SVector [0, 1, 0]
     dρ_dz0 = -Я * @SVector [0, 0, 1]
 
-    dρ_dθx = -Я * (Sx * Rx * Ry * Rz) * Я  * (hit - m.r0)
-    dρ_dθy = -Я * (Rx * Sy * Ry * Rz) * Я  * (hit - m.r0)
-    dρ_dθz = -Я * (Rx * Ry * Sz * Rz) * Я  * (hit - m.r0)
-
-    # dρ_dθx = Я * (Sx * m.R) * Я * (hit - m.r0)
-    # dρ_dθy = Я * (Sy * m.R) * Я * (hit - m.r0)
-    # dρ_dθz = Я * (Sz * m.R) * Я * (hit - m.r0)
+    dρ_dθx = -Яz * Яy * Sx * Яx * (hit - m.r0)
+    dρ_dθy = -Яz * Sy * Яy * Яx * (hit - m.r0)
+    dρ_dθz = -Sz * Яz * Яy * Яx * (hit - m.r0)
 
     derglX = [dρ_dx0[1], dρ_dy0[1], dρ_dz0[1], dρ_dθx[1], dρ_dθy[1], dρ_dθz[1]]
     derglY = [dρ_dx0[2], dρ_dy0[2], dρ_dz0[2], dρ_dθx[2], dρ_dθy[2], dρ_dθz[2]]
