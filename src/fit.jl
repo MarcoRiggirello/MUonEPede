@@ -1,77 +1,92 @@
 function chisquare(stubs::StubSet, modules::MUonEStation, track::Track{T}, weight::Real; cic=false) where T
     Fx = zero(T)
     Fy = zero(T)
+    Fb = zero(T)
     for (s, m) in zip(stubs, modules)
-        z, _ = intersection(m, track)
-        l, _ = stub_to_local(s, m)
-        rx, ry = rmeas(l, z, m, track)
+        zs, zc = intersection(m, track)
+        ls, lc = stub_to_local(s, m)
+        rx, ry = rmeas(ls, zs, m, track)
+        rb, _ = rmeas(lc, zc, m, track)
         Fx += rx^2
         Fy += ry^2
+        Fb += rb^2
     end
-    sx, sy, _ = sigma(weight)
+    σx, σy, σb = sigma(weight)
     if cic
-        return (Fx/sx^2 + Fy/sy^2)/2
+        return (Fx/σx^2 + Fy/σy^2 + Fb/σb)/2
     else
-        return (Fx/sx^2)/2
+        return (Fx/σx^2 + Fb/σb)/2
     end
 end
 
 function gradient!(G, stubs::StubSet, modules::MUonEStation, track::Track{T}, weight::Real; cic=false) where T
     gx = zeros(T, 4)
     gy = zeros(T, 4)
+    gb = zeros(T, 4)
     for (s, m) in zip(stubs, modules)
-	z, _ = intersection(m, track)
-        l, _ = stub_to_local(s, m)
-        rx, ry = rmeas(l, z, m, track)
-        dx, dy = derlc(z, m)
+        zs, zc = intersection(m, track)
+        ls, lc = stub_to_local(s, m)
+        rx, ry = rmeas(ls, zs, m, track)
+        dx, dy = derlc(zs, m)
+        rb, _ = rmeas(lc, zc, m, track)
+        db, _ = derlc(zc, m)
 
         gx -= dx * rx 
         gy -= dy * ry 
+        gb -= db * rb 
     end
-    sx, sy, _ = sigma(weight)
+    σx, σy, σb = sigma(weight)
     if cic
-        G .= gx/sx^2 + gy/sy^2
+        G .= gx/σx^2 + gy/σy^2 + gb/σb^2
     else
-        G .= gx/sx^2
+        G .= gx/σx^2 + gb/σb^2
     end
 end
 
 function chisquare_gradient!(F, G, stubs::StubSet, modules::MUonEStation, track::Track{T}, weight::Real; cic=false) where T
-    zz = zeros(T, 6)
+    zzs = zeros(T, 6)
+    zzc = zeros(T, 6)
     rrx = zeros(T, 6)
     rry = zeros(T, 6)
-    vx, vy, _ = sigma(weight).^2
+    rrb = zeros(T, 6)
+    vx, vy, vb = sigma(weight).^2
     for (i, s, m) in zip(1:6, stubs, modules)
-	zz[i], _ = intersection(m, track)
-        l, _ = stub_to_local(s, m)
-        rrx[i], rry[i] = rmeas(l, zz[i], m, track)
+        zzs[i], zzc[i] = intersection(m, track)
+        ls, lc = stub_to_local(s, m)
+        rrx[i], rry[i] = rmeas(ls, zzs[i], m, track)
+        rrb[i], _ = rmeas(lc, zzc[i], m, track)
     end
     if G !== nothing
         gx = zeros(T, 4)
         gy = zeros(T, 4)
-        for (z, rx, ry, m) in zip(zz, rrx, rry, modules)
-            dx, dy = derlc(z, m)
+        gb = zeros(T, 4)
+        for (zs, zc, rx, ry, rb, m) in zip(zzs, zzc, rrx, rry, rrb, modules)
+            dx, dy = derlc(zs, m)
+            db, _ = derlc(zc, m)
 
             gx -= dx * rx
             gy -= dy * ry
+            gb -= db * rb
         end
         if cic
-            G .= gx/vx + gy/vy
+            G .= gx/vx + gy/vy + gb/vb
         else 
-            G .= gx/vx
+            G .= gx/vx + gb/vb
         end
     end
     if F !== nothing
         Fx = zero(T)
         Fy = zero(T)
-        for (rx, ry) in zip(rrx, rry)
+        Fb = zero(T)
+        for (rx, ry, rb) in zip(rrx, rry, rrb)
             Fx += rx^2
             Fy += ry^2
+            Fb += rb^2
         end
         if cic
-            return (Fx/vx + Fy/vy)/2
+            return (Fx/vx + Fy/vy + Fb/vb)/2
         else
-            return (Fx/vx)/2
+            return (Fx/vx + Fb/vb)/2
         end
     end        
 end
