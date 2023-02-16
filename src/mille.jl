@@ -7,20 +7,34 @@ function rmeas(l::SVector{3, T}, z, m, t) where T
     return rmeasX, rmeasY 
 end
 
-function sigma(w)
-    return Float32(0.003*w), 1.5f0, Float32(0.003*w) 
+function sigma(s::Stub{T}, w::Real=1) where T
+    pitch = 0.009
+
+    st = @SVector [.0, .5]
+    ct = @SVector [.0, .5, .25, .75]
+
+    S = @SVector [√12, √24]
+    C = @SMatrix [√12 √24 √16 √16;
+                  √24 √12 √16 √16]
+
+    sb = st .== s.localX % 1
+    cb = ct .== s.bend % 1
+
+    sf = S * sb
+    cf = sb ⋅ (C * cb)
+    return T(pitch * w / sf), T(1.5), T(pitch * w / cf) 
 end
 
 function derlc(z::Real, m::MUonEModule)
     Я = inv(m.R)
     
-    dρ_dt0x = Я * @SVector [1, 0, 0]
-    dρ_dt0y = Я * @SVector [0, 1, 0]
-    dρ_dmx = z * Я * @SVector [1, 0, 0]
-    dρ_dmy = z * Я * @SVector [0, 1, 0]
+    ∂ρ_∂t0x = Я * @SVector [1, 0, 0]
+    ∂ρ_∂t0y = Я * @SVector [0, 1, 0]
+    ∂ρ_∂mx = z * Я * @SVector [1, 0, 0]
+    ∂ρ_∂my = z * Я * @SVector [0, 1, 0]
 
-    derlcX = [dρ_dt0x[1], dρ_dt0y[1], dρ_dmx[1], dρ_dmy[1]]
-    derlcY = [dρ_dt0x[2], dρ_dt0y[2], dρ_dmx[2], dρ_dmy[2]]
+    derlcX = [∂ρ_∂t0x[1], ∂ρ_∂t0y[1], ∂ρ_∂mx[1], ∂ρ_∂my[1]]
+    derlcY = [∂ρ_∂t0x[2], ∂ρ_∂t0y[2], ∂ρ_∂mx[2], ∂ρ_∂my[2]]
     return derlcX, derlcY 
 end
     
@@ -49,16 +63,16 @@ function dergl(z, m, t)
     Яy = RotY(-θy)
     Яz = RotZ(-θz)
 
-    dρ_dx0 = -Я * @SVector [1, 0, 0]
-    dρ_dy0 = -Я * @SVector [0, 1, 0]
-    dρ_dz0 = -Я * @SVector [0, 0, 1]
+    ∂ρ_∂x0 = -Я * @SVector [1, 0, 0]
+    ∂ρ_∂y0 = -Я * @SVector [0, 1, 0]
+    ∂ρ_∂z0 = -Я * @SVector [0, 0, 1]
 
-    dρ_dθx = -Яz * Яy * Sx * Яx * (hit - m.r0)
-    dρ_dθy = -Яz * Sy * Яy * Яx * (hit - m.r0)
-    dρ_dθz = -Sz * Яz * Яy * Яx * (hit - m.r0)
+    ∂ρ_∂θx = -Яz * Яy * Sx * Яx * (hit - m.r0)
+    ∂ρ_∂θy = -Яz * Sy * Яy * Яx * (hit - m.r0)
+    ∂ρ_∂θz = -Sz * Яz * Яy * Яx * (hit - m.r0)
 
-    derglX = [dρ_dx0[1], dρ_dy0[1], dρ_dz0[1], dρ_dθx[1], dρ_dθy[1], dρ_dθz[1]]
-    derglY = [dρ_dx0[2], dρ_dy0[2], dρ_dz0[2], dρ_dθx[2], dρ_dθy[2], dρ_dθz[2]]
+    derglX = [∂ρ_∂x0[1], ∂ρ_∂y0[1], ∂ρ_∂z0[1], ∂ρ_∂θx[1], ∂ρ_∂θy[1], ∂ρ_∂θz[1]]
+    derglY = [∂ρ_∂x0[2], ∂ρ_∂y0[2], ∂ρ_∂z0[2], ∂ρ_∂θx[2], ∂ρ_∂θy[2], ∂ρ_∂θz[2]]
     return derglX, derglY
 end
 
@@ -72,7 +86,7 @@ function mille!(glder::AbstractVector, inder::AbstractVector, s, m, t, w; cic=fa
     l = cic ? 36 : 24
     o = l * m.id + 1
 
-    sigmaX, sigmaY, sigmaB = sigma(w)
+    sigmaX, sigmaY, sigmaB = sigma(s, w)
     
     rmeasX, rmeasY = rmeas(l_s, z_s, m, t)
     derlcX, derlcY = derlc(z_s, m)
