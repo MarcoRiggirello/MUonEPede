@@ -5,10 +5,10 @@ Computes the global coordinate `z` of the intersection point between a `Track` a
  
 """
 function intersection(m::MUonEModule, t::Track)
-    _, _, eZ = local_axes(m)
+    _, _, ew = local_axes(m)
     Z = m.spacing/2
-    return (-Z + (m.r0 - t.t0) ⋅ eZ) / (t.et ⋅eZ),
-           (Z + (m.r0 - t.t0) ⋅ eZ) / (t.et ⋅eZ)
+    return (-Z + (m.r0 - t.t0) ⋅ ew) / (t.et ⋅ew),
+           (Z + (m.r0 - t.t0) ⋅ ew) / (t.et ⋅ew)
 end
 
 function interpolate(stubs::StubSet{T}, modules::MUonEStation) where T
