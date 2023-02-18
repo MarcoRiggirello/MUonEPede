@@ -5,10 +5,10 @@ Compute the versors of the local reference frame.
     
 """
 function local_axes(m::MUonEModule)
-    eX = SVector{3}(m.R[1:3])
-    eY = SVector{3}(m.R[4:6])
-    eZ = SVector{3}(m.R[7:9])
-    return eX, eY, eZ
+    eu = m.R * @SVector [1, 0, 0]
+    ev = m.R * @SVector [0, 1, 0]
+    ew = m.R * @SVector [0, 0, 1]
+    return eu, ev, ew
 end
 
 """
