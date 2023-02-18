@@ -57,6 +57,38 @@ struct MUonEStation{T} <: FieldVector{6, MUonEModule{T}}
     y_l5::MUonEModule{T}
 end
 
+
+"""
+
+    MUonEStation(fname::String)
+    
+`MUonEStation` constructor reading a xml structure file.
+See https://gitlab.cern.ch/muesli/daq-sw/daq-decode/-/blob/stdVec_bxAssembled/Structure/MUonEStructure_TB2022.xml
+"""
+function MUonEStation{T}(fname::String) where T<:Real
+    doc = readxml(fname)
+    station = doc.root.firstelement
+    modulenodes = findall("//Module", station)
+    modules = Vector{MUonEModule}(undef, 6) 
+    for (i, m) in enumerate(modulenodes)
+        pos, rot = elements(m)
+        
+        x0 = parse(T, pos["positionX"])
+        y0 = parse(T, pos["positionY"])
+        z0 = parse(T, pos["positionZ"])
+        θx = parse(T, rot["rotationX"])
+        θy = parse(T, rot["rotationY"])
+        θz = parse(T, rot["rotationZ"])
+        id = parse(Int32, m["linkId"])
+        name = m["name"]
+        spacing = parse(Float32, m["sensorSpacing"])
+
+        modules[i] = MUonEModule(x0, y0, z0, θx, θy, θz, id=id, name=name, spacing=spacing)
+    end
+    return MUonEStation(modules...)
+end
+
+
 """
 
     Stub{T}(localX, localY, bend, link)

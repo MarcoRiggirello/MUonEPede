@@ -1,33 +1,3 @@
-"""
-    getmodules(fname::String)
-    
-Returns a `MUonEStation` constructed from an xml file.
-See https://gitlab.cern.ch/muesli/daq-sw/daq-decode/-/blob/stdVec_bxAssembled/Structure/MUonEStructure_TB2022.xml
-"""
-function getmodules(fname::String)
-    doc = readxml(fname)
-    station = doc.root.firstelement
-    modulenodes = findall("//Module", station)
-    modules = Vector{MUonEModule}(undef, 6) 
-    for (i, m) in enumerate(modulenodes)
-        pos, rot = elements(m)
-        
-        x0 = parse(Float32, pos["positionX"])
-        y0 = parse(Float32, pos["positionY"])
-        z0 = parse(Float32, pos["positionZ"])
-        θx = parse(Float32, rot["rotationX"])
-        θy = parse(Float32, rot["rotationY"])
-        θz = parse(Float32, rot["rotationZ"])
-        id = parse(Int32, m["linkId"])
-        name = m["name"]
-        spacing = parse(Float32, m["sensorSpacing"])
-
-        modules[i] = MUonEModule(x0, y0, z0, θx, θy, θz, id=id, name=name, spacing=spacing)
-    end
-    return MUonEStation(modules...)
-end
-
-
 function applycorrections(fname::String, ms::MUonEStation)
     millepederes = readdlm(fname, skipstart=1)
     corrections = Vector{Float32}(millepederes[:,2])
@@ -72,7 +42,44 @@ function selectevent!(stubs::StubSet, event)
         return true
 end
 
+function align(; ntuple::String, structure::String, iterations=4)
+    tree = LazyTree(ROOTFile(ifname), "cbmsim", ["LocalX", "LocalY", "Link", "Bend"])
+    
+end
+# align(; ntuple::String, structure::String, outcorrection?, iterations=4)
+# generatebin(; ntuple::LazyTree, modules::MUonEStructure, binfile::String, weight::Union{Bool, Real})
+function generatebin(; tree::LazyTree, modules::MUonEStation, binfile::String; cic=false)
+    ffile = FortranFile(binfile, "w")
+    # service array
+    stubs = StubSet{Float32}()
 
+    # see https://gitlab.desy.de/claus.kleinwort/millepede-ii/-/blob/main/mille.f90#L27
+    # without CIC (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
+    # with CIC (1 rmeas + 1 sigma + 4 lder + 6 gder) * 18 measurements + 1 line of zeros
+    S = cic ? 217 : 145
+    glder = Vector{Float32}(undef, S)
+    inder = Vector{Int32}(undef, S)
+
+    glder[1] = zero(Float32)
+    inder[1] = zero(Int32)
+    for event in ProgressBar(tree)
+        s = selectevent!(stubs, event)
+        if !s
+            continue
+        end
+
+        track, χ2 = trackfit(stubs, modules, cic=cic)
+        ndof = cic ? 14 : 8
+        weight = √(χ2 / ndof)
+
+        for (s, m) in zip(stubs, modules)
+            mille!(glder, inder, s, m, track, weight, cic=cic)
+        end
+        write(ffile, Int32(S + S), glder, inder) # like ENDLE subroutine
+    end
+    close(ffile)
+end
+#=
 """
     
     generatebin(; ifname::String, mfname::String, ofname::String, cfname::String, weight::Real)
@@ -94,7 +101,7 @@ CAVE! The use of CIC information is, at present MUonEPede status, A WARRANTY OF 
 function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=nothing, weight=1.0, cic=false)
     tree = LazyTree(ROOTFile(ifname), "cbmsim", ["LocalX", "LocalY", "Link", "Bend"])
     ffile = FortranFile(ofname, "w")
-    modules = getmodules(mfname)
+    modules = MUonEStation(mfname)
     if cfnames !== nothing
         for c in cfnames
             modules = applycorrections(c, modules)
@@ -118,7 +125,7 @@ function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=n
             continue
         end
         # costruisci la traccia target
-        track = trackfit(stubs, modules, weight, cic=cic)
+        track, chi2 = trackfit(stubs, modules, cic=cic)
         # mille() per ogni hit
         for (s, m) in zip(stubs, modules)
             mille!(glder, inder, s, m, track, weight, cic=cic)
@@ -128,12 +135,12 @@ function generatebin(; ifname::String, mfname::String, ofname::String, cfnames=n
     end
     close(ffile)
 end
-
+=#
 
 function residuals(; ifname::String , ofname::String, title::String, loweredges=[-200 for i in 1:6], upperedges=[200 for i in 1:6], cic=false)
-    ROOT = pyimport("ROOT")
     
     axislabels = "Residuals [#mu m]; Events/#mu m"
+    labels2d = "Hit residuals [#mu m]; Bend residuals [#mu m]"
     
     link = ["0", "1", "2", "3", "4", "5"]
     type = ["X", "Y", "U", "V", "X", "Y"]
@@ -141,25 +148,38 @@ function residuals(; ifname::String , ofname::String, title::String, loweredges=
     s = cic ? 36 : 24
     S = cic ? 217 : 145
     uresidualindex = [i for i in 2:s:S]
-
+    bresidualindex = [i for i in 14:s:S]
+    
     binfile = FortranFile(ifname)
     rootfile = ROOT.TFile(ofname, "recreate")
 
-    hists = []
+    uhists = []
+    bhists = []
+    dhists = []
 
     for (l, t, le, ue) in zip(link, type, loweredges, upperedges)
         histtitle = title * "Link: " * l * " --- Type: " * t * ";"
-        push!(hists, ROOT.TH1D("residuals"*l*t, histtitle*axislabels, abs(ue - le), le, ue))
+        push!(uhists, ROOT.TH1D("residuals"*l*t, histtitle*axislabels, abs(ue - le), le, ue))
+        push!(bhists, ROOT.TH1D("residuals (bend)"*l*t, histtitle*axislabels, abs(ue - le), le, ue))
+        push!(dhists, ROOT.TH2D("residuals correlation"*l*t, histtitle*labels2d, abs(ue - le), le, ue, abs(ue - le), le, ue))
     end
     
     while !eof(binfile)
         _, glder, _ = read(binfile, Int32, (Float32, Int32(S)), (Int32, Int32(S)))
-        for (i, h) in zip(uresidualindex, hists)
-            h.Fill(10000*glder[i])
+        for (iu, ib, uh, bh, dh) in zip(uresidualindex, bresidualindex, uhists, bhists, dhists)
+		uh.Fill(10000*glder[iu])
+		bh.Fill(10000*glder[ib])
+        dh.Fill(10000*glder[iu], 10000*glder[ib])
         end
     end
 
-    for h in hists
+    for h in uhists
+        h.Write()
+    end
+    for h in bhists
+        h.Write()
+    end
+    for h in dhists
         h.Write()
     end
 
