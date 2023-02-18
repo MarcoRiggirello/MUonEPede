@@ -1,26 +1,4 @@
-function chisquare(stubs::StubSet, modules::MUonEStation, track::Track{T}; cic=false) where T
-    Fx = zero(T)
-    Fy = zero(T)
-    Fb = zero(T)
-    for (s, m) in zip(stubs, modules)
-        zs, zc = intersection(m, track)
-        ls, lc = stub_to_local(s, m)
-        rx, ry = rmeas(ls, zs, m, track)
-        rb, _  = rmeas(lc, zc, m, track)
-        σx, σy, σb = sigma(s)
-        Fx += (rx/σx)^2
-        Fy += (ry/σy)^2
-        Fb += (rb/σb)^2
-    end
-    if cic
-        return (Fx + Fy + Fb)/2
-    else
-        return (Fx + Fb)/2
-    end
-end
-
-
-function chisquare_gradient!(F, G, stubs::StubSet, modules::MUonEStation, track::Track{T}; cic=false) where T
+function chisquare_gradient!(F, G, stubs::StubSet, modules::MUonEStation, track::Track{T}; cic::Bool, skip::Union{Bool, Integer}) where T
     f = F !== nothing
     g = G !== nothing
 
@@ -37,6 +15,9 @@ function chisquare_gradient!(F, G, stubs::StubSet, modules::MUonEStation, track:
     end
 
     for (s, m) in zip(stubs, modules)
+        if s.link == skip
+            continue
+        end
         zs, zc = intersection(m, track)
         ls, lc = stub_to_local(s, m)
 
@@ -70,23 +51,37 @@ function chisquare_gradient!(F, G, stubs::StubSet, modules::MUonEStation, track:
     end        
 end
 
-function trackfit(stubs::StubSet, modules::MUonEStation; cic=false)
+function trackfit(stubs::StubSet, modules::MUonEStation; cic=false, skip=false)
     #t_0 = interpolate(stubs, modules)
     #p_0 = [t_0.t0.x, t_0.t0.y, t_0.et.x, t_0.et.y]
     p_0 = [0.0 for i in 1:4]
 
-    #f = TwiceDifferentiable(x->chisquare(stubs, modules, Track(x...), weight), p_0, autodiff=:forward)
-    fg!(F, G, x) = chisquare_gradient!(F, G, stubs, modules, Track(x...), cic=cic)
+    fg!(F, G, x) = chisquare_gradient!(F, G, stubs, modules, Track(x...), cic=cic, skip=skip)
+    objective = TwiceDifferentiable(Optim.only_fg!(fg!), p_0, autodiff=:forward)
 
-    results = optimize(Optim.only_fg!(fg!),
-                       p_0,
-                       BFGS(alphaguess = InitialHagerZhang()))
-    popt = Optim.minimizer(results)
-    chi2 = Optim.minimum(results)
+    results = optimize(objective, p_0)
+
     if Optim.converged(results)
-        return Track(popt...), chi2
+        return results, objective
     else
         throw("local fit not converged!")
     end
+end
+
+
+function trackfit!(popt, stubs::StubSet, modules::MUonEStation; cic=false, skip=false)
+    results, _ = trackfit(stubs, modules; cic=cic, skip=skip)
+    popt .= Optim.minimizer(results)
+    chi2 = Optim.minimum(results)
+    return chi2
+end
+
+
+function trackfit!(popt, pcov, stubs::StubSet, modules::MUonEStation; cic=false, skip=false)
+    results, objective = trackfit(stubs, modules; cic=cic, skip=skip)
+    popt .= Optim.minimizer(results)
+    pcov .= inv(hessian!(objective, popt))
+    chi2 = Optim.minimum(results)
+    return chi2
 end
 
