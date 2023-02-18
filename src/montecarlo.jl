@@ -1,25 +1,28 @@
 # a dummy Monte Carlo for pede alignment
 
 """
-   Do the inverse of strip_to_local 
+
+Do the inverse of strip_to_local 
+
 """
-function local_to_stub(q_s::StaticVector{3,T}, q_c::StaticVector{3,T}, m::MUonEModule) where {T<:Real}
+function local_to_stub(q_s::StaticVector{3,T}, q_c::StaticVector{3,T}, m::MUonEModule, offset::Real) where {T<:Real}
     nstrips = 1016
     strip_pitch = 0.009
 
-    strip_X = round(q_s.x / strip_pitch, digits = 1, base = 2) + nstrips/2 - 1/2
+    qsx = q_s.x + T(1.f-3) * randn(T)
+    qcx = q_c.x + T(1.f-3) * randn(T)
+
+    strip_X = round(qsx / strip_pitch, digits = 1, base = 2) + nstrips/2 - 1/2
     strip_Y = q_s.y > 0 ? 0.75 : 0.25
-    strip_c = round(q_c.x / strip_pitch, digits = 1, base = 2) + nstrips/2 - 1/2
-    # bend = -round((q_c.x - q_s.x) / strip_pitch, digits = 1, base = 2)
+    strip_c = round((qcx + T(offset)) / strip_pitch, digits = 1, base = 2) + nstrips/2 - 1/2
     bend = (strip_c - strip_X)
-    # we don't use the bend at the moment
     return Stub{T}(strip_X, strip_Y, bend, m.id)
 end
 
-function mcdata!(stubs::StubSet, modules::MUonEStation; beamsize_x=1.0, beamsize_y=1.0)
+function mcdata!(stubs::StubSet, modules::MUonEStation{Float32}; beamsigma_x=1.0, beamsigma_y=1.0, offsets=[0.0f0 for i in 1:6])
     while true
-        x0 = Float32(beamsize_x) * randn(Float32)
-        y0 = Float32(beamsize_y) * randn(Float32)
+        x0 = Float32(beamsigma_x) * randn(Float32)
+        y0 = Float32(beamsigma_y) * randn(Float32)
         mx = 1f-3 * randn(Float32)
         my = 1f-3 * randn(Float32)
     
@@ -31,61 +34,78 @@ function mcdata!(stubs::StubSet, modules::MUonEStation; beamsize_x=1.0, beamsize
         qq_s = global_to_local.(t.(z_s), modules)
         qq_c = global_to_local.(t.(z_c), modules)
         if all(q -> abs(q[1] < 5), qq_s) && all(q -> abs(q[2] < 5), qq_s)
-            stubs[1:6] = local_to_stub.(qq_s, qq_c, modules)
-            break
+            stubs[1:6] = local_to_stub.(qq_s, qq_c, modules, offsets)
+            return x0, y0, mx, my
         end
     end
 end
 
-"""
-    generatebinmc(; nevents::Integer, mcfname::String, nmfname::String, ofname::String, cfname=nothing, weight=1.0, beamsize_x=1.0, beamsize_y=1.0)
 
-Generate MonteCarlo data in a Fortran binary file using 
-as input the XML structure file.
+"""
+    
+    toymontecarlo(N::Integer; station::String, out::String, beamsigma_x=1.0, beamsigma_y=1.0, offsets=[0.0f0 for i in 1:6])
+
+Generate MonteCarlo data using the XML structure file as input.
 
 #Arguments
-- `nevents`: number of tracks;
-- `mcfname`: name of the xml structure file with the montecarlo truth;
+- `N`: number of tracks;
+- `station`: name of the xml structure file with the montecarlo true postitions;
 - `nmfnmae`: name of the xml structure file with nominal positions; 
-- `ofname`: name of the fortran binary output file;
-- `cfnames`: list of parameters correction (the expected syntax is the one of the typical millepede.res file);
-- `weight`: weight of sigma;
-- `cic`: use CIC information in chisquare;
+- `out`: name of the root output file;
 - `beamsize_x`: the x sigma of the beam (in cm);
-- `beamsize_y`: the y sigma of the beam (in cm).
+- `beamsize_y`: the y sigma of the beam (in cm);
+- `offsets`: misalignment for seed and correlation layer.
+
 """
-function generatebinmc(; nevents::Integer, mcfname::String, nmfname::String, ofname::String, cfnames=nothing, weight=1.0, cic=false, beamsize_x=1.0, beamsize_y=1.0)
-    ffile = FortranFile(ofname, "w")
-    mcmodules = getmodules(mcfname)
-    nmmodules = getmodules(nmfname)
-    if cfnames !== nothing
-        for c in cfnames
-            nmmodules = applycorrections(c, nmmodules)
-        end
-    end    
+function toymontecarlo(N::Integer; station::String, out::String, beamsigma_x=1.0, beamsigma_y=1.0, offsets=[0.0f0 for i in 1:6])
+    f = ROOT.TFile(out, "recreate")
+    m = MUonEStation{Float32}(station)
+
+    t = ROOT.TTree("cbmsim", "cbmsim")
+
+    nstubs = [0x6]
+    link = [UInt16(i) for i in 0:5] 
+
+    localx = Vector{Float32}(undef,6)
+    localy = Vector{Float32}(undef,6)
+    bend = Vector{Float32}(undef,6)
+
+    t.Branch("nStubs", nstubs, "nStubs/b")
+    t.Branch("Link", link, "Link[nStubs]/s")
+    t.Branch("LocalX", localx, "LocalX[nStubs]/F")
+    t.Branch("LocalY", localy, "LocalY[nStubs]/F")
+    t.Branch("Bend", bend, "Bend[nStubs]/F")
+
+    bx = [0x0000]
+    superid = [0x00000000]
+
+    t.Branch("Bx", bx, "Bx/s")
+    t.Branch("SuperID", superid, "SuperID/i")
+
+    mx = [0.f0]
+    my = [0.f0]
+    x0 = [0.f0]
+    y0 = [0.f0]
+
+    t.Branch("Track_mx", mx, "mx/F")
+    t.Branch("Track_my", my, "my/F")
+    t.Branch("Track_x0", x0, "x0/F")
+    t.Branch("Track_y0", y0, "y0/F")
+
+    s = StubSet{Float32}()
     
-    # service array
-    stubs = StubSet{Float32}()
+    for i in ProgressBar(1:N)
+        superid[1], bx[1] = divrem(i, 3186)
 
-    # see https://gitlab.desy.de/claus.kleinwort/millepede-ii/-/blob/main/mille.f90#L27
-    # with CIC: (1 rmeas + 1 sigma + 4 lder + 6 gder) * 18 measurements + 1 line of zeros
-    # without CIC: (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
-    S = cic ? 217 : 145
-    glder = Vector{Float32}(undef, S)
-    inder = Vector{Int32}(undef, S)
-
-    glder[1] = zero(Float32)
-    inder[1] = zero(Int32)
-    for _ in ProgressBar(1:nevents)
-        mcdata!(stubs, mcmodules, beamsize_x=beamsize_x, beamsize_y=beamsize_y)
-        # costruisci la traccia target
-        track = trackfit(stubs, nmmodules, weight, cic=cic)
-        # mille() per ogni hit
-        for (s, m) in zip(stubs, nmmodules)
-            mille!(glder, inder, s, m, track, weight, cic=cic)
+        x0[1], y0[1] ,mx[1], my[1] = mcdata!(s, m, beamsigma_x=beamsigma_x, beamsigma_y=beamsigma_y, offsets=offsets)
+        for (j, stub) in enumerate(s)
+            localx[j] = stub.localX                     
+            localy[j] = stub.localY
+            bend[j] = stub.bend
         end
-        # scrivi su file
-        write(ffile, Int32(S+S), glder, inder) # like ENDLE subroutine
+
+        t.Fill()
     end
-    close(ffile)
+    t.Write()
+    f.Close()
 end
