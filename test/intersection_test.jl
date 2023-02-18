@@ -19,7 +19,7 @@ end
     z_c = getindex.(z, 2)
     l_s = MUonEPede.global_to_local.(t.(z_s), modules)
     l_c = MUonEPede.global_to_local.(t.(z_c), modules)
-    s = MUonEPede.local_to_stub.(l_s, l_c, modules)
+    s = MUonEPede.local_to_stub.(l_s, l_c, modules, 0.0)
     ss = StubSet(s...)
     tt = MUonEPede.interpolate(ss, modules)
     

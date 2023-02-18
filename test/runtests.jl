@@ -6,7 +6,7 @@ using Test
 using StaticArrays
 using Optim, LineSearches
 
-modules = MUonEPede.getmodules("../MUonEStructure_December2022.xml")
+modules = MUonEPede.MUonEStation{Float32}("../MUonEStructure_December2022.xml")
 
 include("intersection_test.jl")
 #include("mille_test.jl")
