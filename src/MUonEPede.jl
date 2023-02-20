@@ -6,6 +6,7 @@ CMS/MUonE BT data preprocessing for alignment with Millepede II
 module MUonEPede
 
 import LinearAlgebra: ⋅, dot, Diagonal
+import Statistics: median
 using Rotations, StaticArrays
 using UnROOT, FortranFiles, EzXML, DelimitedFiles
 using Optim, NLSolversBase
