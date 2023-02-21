@@ -48,10 +48,11 @@ function align(; ntuple::String, structure::String, iterations=4)
 end
 # align(; ntuple::String, structure::String, outcorrection?, iterations=4)
 # generatebin(; ntuple::LazyTree, modules::MUonEStructure, binfile::String, weight::Union{Bool, Real})
-function generatebin(; tree::LazyTree, modules::MUonEStation, binfile::String; cic=false)
+function generatebin(tree::LazyTree, modules::MUonEStation, binfile::String; cic=false)
     ffile = FortranFile(binfile, "w")
     # service array
     stubs = StubSet{Float32}()
+    tpars = MVector{4, Float32}(undef)
 
     # see https://gitlab.desy.de/claus.kleinwort/millepede-ii/-/blob/main/mille.f90#L27
     # without CIC (1 rmeas + 1 sigma + 4 lder + 6 gder) * 12 measurements + 1 line of zeros
@@ -68,12 +69,12 @@ function generatebin(; tree::LazyTree, modules::MUonEStation, binfile::String; c
             continue
         end
 
-        track, χ2 = trackfit(stubs, modules, cic=cic)
+        χ2 = trackfit!(tpars, stubs, modules, cic=cic)
         ndof = cic ? 14 : 8
         weight = √(χ2 / ndof)
 
         for (s, m) in zip(stubs, modules)
-            mille!(glder, inder, s, m, track, weight, cic=cic)
+            mille!(glder, inder, s, m, Track(tpars...), weight, cic=cic)
         end
         write(ffile, Int32(S + S), glder, inder) # like ENDLE subroutine
     end

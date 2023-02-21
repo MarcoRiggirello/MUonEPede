@@ -51,18 +51,48 @@ function chisquare_gradient!(F, G, stubs::StubSet, modules::MUonEStation, track:
     end        
 end
 
+# approximation!
+function covariance_matrix!(covm, stubs::StubSet, modules::MUonEStation, track::Track{T}; cic::Bool, skip::Union{Bool, Integer}) where T
+    H = @MMatrix zeros(T, 4, 4)
+    for (s, m) in zip(stubs, modules)
+        if s.link == skip
+            continue
+        end
+        zs, zc = intersection(m, track)
+        σ2x, σ2y, σ2b = sigma(s).^2
+        dx, dy = derlc(zs, m)
+        db, _  = derlc(zc, m)
+        for i in 1:4
+            for j in 1:4
+                H[i,j] += dx[i] * dx[j] / σ2x
+                H[i,j] += db[i] * db[j] / σ2b
+                if cic
+                    H[i,j] += dy[i] * dy[j] / σ2y
+                end
+            end
+        end
+    end
+    covm .= inv(H)
+end
+
+
 function trackfit(stubs::StubSet, modules::MUonEStation; cic=false, skip=false)
-    #t_0 = interpolate(stubs, modules)
-    #p_0 = [t_0.t0.x, t_0.t0.y, t_0.et.x, t_0.et.y]
-    p_0 = [0.0 for i in 1:4]
+    t_0 = interpolate(stubs, modules)
+    p_0 = [t_0.t0.x, t_0.t0.y, t_0.et.x, t_0.et.y]
 
     fg!(F, G, x) = chisquare_gradient!(F, G, stubs, modules, Track(x...), cic=cic, skip=skip)
-    objective = TwiceDifferentiable(Optim.only_fg!(fg!), p_0, autodiff=:forward)
 
-    results = optimize(objective, p_0)
+    results = optimize(Optim.only_fg!(fg!),
+                       p_0, 
+                       LBFGS(P = diagm([1f-2, 1f-2, 1f2, 1f2]),
+                             #alphaguess=LineSearches.InitialQuadratic(),
+                             linesearch=LineSearches.MoreThuente(gtol=0.1)),
+                       Optim.Options(g_tol=10.0))
+
+    #@show results
 
     if Optim.converged(results)
-        return results, objective
+        return results
     else
         throw("local fit not converged!")
     end
@@ -70,17 +100,17 @@ end
 
 
 function trackfit!(popt, stubs::StubSet, modules::MUonEStation; cic=false, skip=false)
-    results, _ = trackfit(stubs, modules; cic=cic, skip=skip)
+    results = trackfit(stubs, modules; cic=cic, skip=skip)
     popt .= Optim.minimizer(results)
     chi2 = Optim.minimum(results)
     return chi2
 end
 
 
-function trackfit!(popt, pcov, stubs::StubSet, modules::MUonEStation; cic=false, skip=false)
-    results, objective = trackfit(stubs, modules; cic=cic, skip=skip)
+function trackfit!(popt, covm, stubs::StubSet, modules::MUonEStation; cic=false, skip=false)
+    results = trackfit(stubs, modules; cic=cic, skip=skip)
     popt .= Optim.minimizer(results)
-    pcov .= inv(hessian!(objective, popt))
+    covariance_matrix!(covm, stubs, modules, Track(popt...), cic=cic, skip=skip)
     chi2 = Optim.minimum(results)
     return chi2
 end

@@ -20,7 +20,7 @@ function sigma(s::Stub{T}, w::Real=1) where T
     sb = st .== s.localX % 1
     cb = ct .== s.bend % 1
 
-    sf = S * sb
+    sf = S ⋅ sb
     cf = sb ⋅ (C * cb)
     return T(pitch * w / sf), T(1.5), T(pitch * w / cf) 
 end

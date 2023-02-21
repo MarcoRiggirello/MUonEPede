@@ -9,8 +9,8 @@ function local_to_stub(q_s::StaticVector{3,T}, q_c::StaticVector{3,T}, m::MUonEM
     nstrips = 1016
     strip_pitch = 0.009
 
-    qsx = q_s.x + T(1.f-3) * randn(T)
-    qcx = q_c.x + T(1.f-3) * randn(T)
+    qsx = q_s.x + T(3.f-3) * randn(T)
+    qcx = q_c.x + T(3.f-3) * randn(T)
 
     strip_X = round(qsx / strip_pitch, digits = 1, base = 2) + nstrips/2 - 1/2
     strip_Y = q_s.y > 0 ? 0.75 : 0.25
@@ -33,7 +33,7 @@ function mcdata!(stubs::StubSet, modules::MUonEStation{Float32}; beamsigma_x=1.0
 
         qq_s = global_to_local.(t.(z_s), modules)
         qq_c = global_to_local.(t.(z_c), modules)
-        if all(q -> abs(q[1] < 5), qq_s) && all(q -> abs(q[2] < 5), qq_s)
+        if all(q -> abs(q[1]) < 5, qq_s) && all(q -> abs(q[2]) < 5, qq_s)
             stubs[1:6] = local_to_stub.(qq_s, qq_c, modules, offsets)
             return x0, y0, mx, my
         end
@@ -66,12 +66,14 @@ function toymontecarlo(N::Integer; station::String, out::String, beamsigma_x=1.0
     nstubs = [0x6]
     link = [UInt16(i) for i in 0:5] 
 
+    z = [Float32(mm.r0.z) for mm in m]
     localx = Vector{Float32}(undef,6)
     localy = Vector{Float32}(undef,6)
     bend = Vector{Float32}(undef,6)
 
     t.Branch("nStubs", nstubs, "nStubs/b")
     t.Branch("Link", link, "Link[nStubs]/s")
+    t.Branch("Z", z, "Z[nStubs]/F")
     t.Branch("LocalX", localx, "LocalX[nStubs]/F")
     t.Branch("LocalY", localy, "LocalY[nStubs]/F")
     t.Branch("Bend", bend, "Bend[nStubs]/F")

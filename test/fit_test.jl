@@ -8,7 +8,9 @@ using Rotations: Random
     ρ_c = MUonEPede.global_to_local.(t.(z_c), modules)
     s = MUonEPede.local_to_stub.(ρ_s, ρ_c, modules, 0.0f0)
     ss = StubSet(s...)
-    tt = MUonEPede.trackfit(ss, modules, 1.0f0)
+    popt = Vector{Float32}(undef, 4)
+    _ = MUonEPede.trackfit!(popt, ss, modules)
+    tt = Track(popt...)
 
     @test t.t0 ≈ tt.t0  rtol=1#e-3
     @test t.et ≈ tt.et  rtol=1#e-3
@@ -17,7 +19,7 @@ using Rotations: Random
 
     p_0 = [40.f0,50.f0,10.f0,-20.f0]
 
-    fg!(F, G, x) = MUonEPede.chisquare_gradient!(F, G, ss, modules, Track(x...), 1.0f0)
+    fg!(F, G, x) = MUonEPede.chisquare_gradient!(F, G, ss, modules, Track(x...), cic=false, skip=false)
     results = optimize(Optim.only_fg!(fg!), p_0, BFGS(linesearch = BackTracking()))
     popt = Optim.minimizer(results)
     ttt = Track(popt...)
