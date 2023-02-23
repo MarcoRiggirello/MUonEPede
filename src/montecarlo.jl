@@ -9,8 +9,8 @@ function local_to_stub(q_s::StaticVector{3,T}, q_c::StaticVector{3,T}, m::MUonEM
     nstrips = 1016
     strip_pitch = 0.009
 
-    qsx = q_s.x + T(3.f-3) * randn(T)
-    qcx = q_c.x + T(3.f-3) * randn(T)
+    qsx = q_s.x + T(2f-3) * randn(T)
+    qcx = q_c.x + T(2f-3) * randn(T)
 
     strip_X = round(qsx / strip_pitch, digits = 1, base = 2) + nstrips/2 - 1/2
     strip_Y = q_s.y > 0 ? 0.75 : 0.25

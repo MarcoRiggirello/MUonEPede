@@ -86,6 +86,7 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
     ll_pulls = "; (hit_meas - hit_fit)/sigma; Events"
     ll_seed_vs_corr = "; seed layer residuals [#mu m]; correlation layer residuals [#mu m]"
     ll_res_vs_bend = "; hit_meas - hit_fit [#mu m]; Bend [strips]"
+    ll_seed_vs_corr_unbiased = "; seed layer pulls; correlation layer pulls"
     ll_pulls_vs_bend = "; (hit_meas - hit_fit)/sigma; Bend [strips]"
     
     link = ["0", "1", "2", "3", "4", "5"]
@@ -98,6 +99,7 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
 
     hh_seed_unbiased = []
     hh_corr_unbiased = []
+    hh_seed_vs_corr_unbiased = [] 
     hh_res_vs_bend_unbiased = []
     
     f = ROOT.TFile(rootfile, "recreate")
@@ -112,6 +114,7 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
         push!(hh_res_vs_bend, ROOT.TH2D("res_vs_bend" * l, histtitle * ll_res_vs_bend, 2 * e, -e, e, 40, -2, 8))
         push!(hh_seed_unbiased, ROOT.TH1D("seed_unbiased" * l , histtitle * " -- Seed Layer "  * ll_pulls, 100, -5, 5))
         push!(hh_corr_unbiased, ROOT.TH1D("corr_unbiased" * l , histtitle * " -- Correlation Layer "  * ll_pulls, 100, -5, 5))
+        push!(hh_seed_vs_corr_unbiased, ROOT.TH2D("seed_vs_corr_unbiased" * l, histtitle * ll_seed_vs_corr_unbiased, 100, -5, 5, 100, -5, 5))
         push!(hh_res_vs_bend_unbiased, ROOT.TH2D("res_vs_bend_unbiased" * l, histtitle * ll_pulls_vs_bend, 100, -5, 5, 40, -2, 8))
     end
 
@@ -121,15 +124,17 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
     h_mx = ROOT.TH1D("mx", title * "; mx; Events", 100, -0.005, 0.005)
     h_my = ROOT.TH1D("my", title * "; my; Events", 100, -0.005, 0.005)
     h_x0 = ROOT.TH1D("x0", title * "; x0; Events", 100, -5, 5)
-    h_y0 = ROOT.TH1D("y0", title * "; x0; Events", 100, -5, 5)
+    h_y0 = ROOT.TH1D("y0", title * "; y0; Events", 100, -5, 5)
+
+    h_beamspot = ROOT.TH2D("beamspot", title * "x0 [cm]; y0 [cm]", 100, -5, 5, 100, -5, 5)
 
     h_χ2 = ROOT.TH1D("chi2", title * "; chi2/ndof; Events", 100, 0, 10)
 
     if ismontecarlo
-        #h_mx_res = ROOT.TH1D("mx_res", title * "; MC_mx - fit_mx; Events", 100, -0.01, 0.01)
-        #h_my_res = ROOT.TH1D("my_res", title * "; MC_my - fit_my; Events", 100, -0.01, 0.01)
-        #h_x0_res = ROOT.TH1D("x0_res", title * "; MC_x0 - fit_x0; Events", 100, -0.01, 0.01)
-        #h_y0_res = ROOT.TH1D("y0_res", title * "; MC_x0 - fit_x0; Events", 100, -0.01, 0.01)
+        h_mx_res = ROOT.TH1D("mx_res", title * "; MC_mx - fit_mx; Events", 100, -0.01, 0.01)
+        h_my_res = ROOT.TH1D("my_res", title * "; MC_my - fit_my; Events", 100, -0.01, 0.01)
+        h_x0_res = ROOT.TH1D("x0_res", title * "; MC_x0 - fit_x0; Events", 100, -0.01, 0.01)
+        h_y0_res = ROOT.TH1D("y0_res", title * "; MC_x0 - fit_x0; Events", 100, -0.01, 0.01)
 
         h_mx_pulls = ROOT.TH1D("mx_pulls", title * "; (MC_mx - fit_mx)/sigma_mx; Events", 100, -5, 5)
         h_my_pulls = ROOT.TH1D("my_pulls", title * "; (MC_my - fit_my)/sigma_my; Events", 100, -5, 5)
@@ -142,10 +147,15 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
     pcov = MMatrix{4, 4, Float32}(undef)
     #r = MVector{12, Float32}(undef)
 
+    i = 0
     for event in ProgressBar(tree)
         se = selectevent!(stubs, event)
         if !se
             continue
+        end
+        i += 1
+        if i == 100_000
+            break
         end
         
         # biased residuals
@@ -173,11 +183,13 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
         h_mx.Fill(popt[3])
         h_my.Fill(popt[4])
 
+        h_beamspot.Fill(popt[1], popt[2])
+
         if ismontecarlo
-            #h_x0_res.Fill(popt[1] - event.Track_x0)
-            #h_y0_res.Fill(popt[2] - event.Track_y0)
-            #h_mx_res.Fill(popt[3] - event.Track_mx)
-            #h_my_res.Fill(popt[4] - event.Track_my)
+            h_x0_res.Fill(popt[1] - event.Track_x0)
+            h_y0_res.Fill(popt[2] - event.Track_y0)
+            h_mx_res.Fill(popt[3] - event.Track_mx)
+            h_my_res.Fill(popt[4] - event.Track_my)
 
             h_x0_pulls.Fill((popt[1] - event.Track_x0)/√(pcov[1,1]))
             h_y0_pulls.Fill((popt[2] - event.Track_y0)/√(pcov[2,2]))
@@ -185,34 +197,36 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
             h_my_pulls.Fill((popt[4] - event.Track_my)/√(pcov[4,4]))
         end
 
-        for (s, m, h_seed, h_corr, h_res_vs_bend_unbiased) in zip(stubs, modules, hh_seed_unbiased, hh_corr_unbiased, hh_res_vs_bend_unbiased)
+        for (s, m, h_seed, h_corr, h_res_vs_bend_unbiased, h_seed_vs_corr_unbiased) in zip(stubs, modules, hh_seed_unbiased, hh_corr_unbiased, hh_res_vs_bend_unbiased, hh_seed_vs_corr_unbiased)
             χ2 = trackfit!(popt, pcov, stubs, modules, cic=cic, skip=s.link)
 
             r_s, r_c = pull(s, m, Track(popt...), √(χ2/(ndof-2)), pcov)
 
-            i = s.link
+            #i = s.link
             #r[i+1], r[i+2] = r_s, r_c
 
             h_seed.Fill(r_s)
             h_corr.Fill(r_c)
+            h_seed_vs_corr_unbiased.Fill(r_s, r_c)
+
             h_res_vs_bend_unbiased.Fill(r_s, s.bend)
         end
 
         #h_median_unbiased.Fill(median(r))
     end
 
-    for h in (hh_seed..., hh_corr..., hh_seed_vs_corr..., hh_res_vs_bend..., hh_seed_unbiased..., hh_corr_unbiased..., hh_res_vs_bend_unbiased...)
+    for h in (hh_seed..., hh_corr..., hh_seed_vs_corr..., hh_res_vs_bend..., hh_seed_unbiased..., hh_corr_unbiased..., hh_res_vs_bend_unbiased..., hh_seed_vs_corr_unbiased...)
         h.Write()
     end
 
     #for h in (h_median, h_median_unbiased, h_χ2, h_x0, h_y0, h_mx, h_my)
-    for h in (h_χ2, h_x0, h_y0, h_mx, h_my)
+    for h in (h_χ2, h_x0, h_y0, h_mx, h_my, h_beamspot)
         h.Write()
     end
 
     if ismontecarlo
-        #for h in (h_x0_res, h_y0_res, h_mx_res, h_my_res, h_x0_pulls, h_y0_pulls, h_mx_pulls, h_my_pulls)
-        for h in (h_x0_pulls, h_y0_pulls, h_mx_pulls, h_my_pulls)
+        for h in (h_x0_res, h_y0_res, h_mx_res, h_my_res, h_x0_pulls, h_y0_pulls, h_mx_pulls, h_my_pulls)
+        #for h in (h_x0_pulls, h_y0_pulls, h_mx_pulls, h_my_pulls)
             h.Write()
         end
     end

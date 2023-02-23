@@ -52,8 +52,8 @@ function chisquare_gradient!(F, G, stubs::StubSet, modules::MUonEStation, track:
 end
 
 # approximation!
-function covariance_matrix!(covm, stubs::StubSet, modules::MUonEStation, track::Track{T}; cic::Bool, skip::Union{Bool, Integer}) where T
-    H = @MMatrix zeros(T, 4, 4)
+function covariance_matrix!(H, stubs::StubSet, modules::MUonEStation, track::Track{T}; cic::Bool, skip::Union{Bool, Integer}) where T
+    H .= 0
     for (s, m) in zip(stubs, modules)
         if s.link == skip
             continue
@@ -72,7 +72,7 @@ function covariance_matrix!(covm, stubs::StubSet, modules::MUonEStation, track::
             end
         end
     end
-    covm .= inv(H)
+    H .= inv(H)
 end
 
 
@@ -81,15 +81,25 @@ function trackfit(stubs::StubSet, modules::MUonEStation; cic=false, skip=false)
     p_0 = [t_0.t0.x, t_0.t0.y, t_0.et.x, t_0.et.y]
 
     fg!(F, G, x) = chisquare_gradient!(F, G, stubs, modules, Track(x...), cic=cic, skip=skip)
+    
+    local results
 
-    results = optimize(Optim.only_fg!(fg!),
-                       p_0, 
-                       LBFGS(P = diagm([1f-2, 1f-2, 1f2, 1f2]),
-                             #alphaguess=LineSearches.InitialQuadratic(),
-                             linesearch=LineSearches.MoreThuente(gtol=0.1)),
-                       Optim.Options(g_tol=10.0))
+    n_fit_max = 50
 
-    #@show results
+    for i in 0:n_fit_max
+        results = optimize(Optim.only_fg!(fg!),
+                           p_0,
+                           LBFGS(P = diagm([1f-2, 1f-2, 1f2, 1f2]),
+                                 linesearch = LineSearches.MoreThuente(gtol = 0.1)),
+                           Optim.Options(g_tol = (i == 0) ? 1e4 : 1e-7))
+        if Optim.g_converged(results) && i != 0
+            break
+        end
+        p_0 = Optim.minimizer(results) + randn(4) .* [2e-2, 2e-2, 2e-4, 2e-4] 
+        if i == n_fit_max
+            @warn "gradient norm is greater than 1e-7"
+        end
+    end
 
     if Optim.converged(results)
         return results

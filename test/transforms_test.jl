@@ -3,9 +3,11 @@
     my = MUonEModule(0,0,0,-0.233,pi,pi/2; name="dummyY", id=1, spacing=1.8)
     lu = MUonEPede.stub_to_local(Stub(500, 0.25, 0, 0), mu)[1]
     ly = MUonEPede.stub_to_local(Stub(100, 0.75, 0, 1), my)[1]
+    lc = MUonEPede.stub_to_local(Stub(100, 0.75, 0, 1), my)[2]
     
     @test lu.z ≈ -2.0
     @test ly.z ≈ -0.9
+    @test lc.z ≈ +0.9
     @test lu ≈ MUonEPede.global_to_local(MUonEPede.local_to_global(lu, mu), mu)
     @test ly ≈ MUonEPede.global_to_local(MUonEPede.local_to_global(ly, my), my)
     @test MUonEPede.local_to_global(ly, my).y ≈ ly[1] * cos(0.233) - ly[3] * sin(0.233) 
@@ -16,7 +18,7 @@
     lso = @SVector [1.0, 0.0, 0.0] # opposite to SEH
     
     lt = @SVector [0.0, 0.0, 0.09] # top sensor
-    lb = @SVector [0.0, 0.0, -0.009] # bottom sensor
+    lb = @SVector [0.0, 0.0, -0.09] # bottom sensor
 
     # X module
     @test MUonEPede.local_to_global(lb, modules[1]).z < MUonEPede.local_to_global(lt, modules[1]).z 
@@ -52,4 +54,16 @@
     @test MUonEPede.local_to_global(lc1, modules[4]).x < 0
     @test MUonEPede.local_to_global(lc1, modules[4]).y > 0
     @test MUonEPede.local_to_global(lss, modules[4]).x ≈ MUonEPede.local_to_global(lss, modules[4]).y rtol=1.e-4
+    # X module
+    @test MUonEPede.local_to_global(lb, modules[5]).z < MUonEPede.local_to_global(lt, modules[5]).z 
+    @test MUonEPede.local_to_global(lss, modules[5]).x > 0 
+    @test MUonEPede.local_to_global(lso, modules[5]).x < 0
+    @test MUonEPede.local_to_global(lc0, modules[5]).y > 0 
+    @test MUonEPede.local_to_global(lc1, modules[5]).y < 0
+    # Y module
+    @test MUonEPede.local_to_global(lb, modules[6]).z > MUonEPede.local_to_global(lt, modules[6]).z 
+    @test MUonEPede.local_to_global(lss, modules[6]).y < 0 
+    @test MUonEPede.local_to_global(lso, modules[6]).y > 0
+    @test MUonEPede.local_to_global(lc0, modules[6]).x < 0 
+    @test MUonEPede.local_to_global(lc1, modules[6]).x > 0
 end
