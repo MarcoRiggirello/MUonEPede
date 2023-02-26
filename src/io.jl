@@ -5,7 +5,7 @@ function applycorrections(fname::String, ms::MUonEStation)
     for (i, m) in enumerate(ms)
         
         x0, y0, z0 = m.r0
-        θx, θy, θz = Rotations.params(m.R) 
+        θz, θy, θx = Rotations.params(m.R) 
         id = m.id
         name = m.name
         spacing = m.spacing
