@@ -5,16 +5,16 @@
         <Rotation rotationX="0" rotationY="0" rotationZ="0" />
         <Module number="0" name="PG01" linkId="0" moduleType="X" sensorSpacing="0.18" isOn="1">
             <Position positionX="0" positionY="0" positionZ="18.0218" />
-            <Rotation rotationX="0" rotationY="0.233" rotationZ="3.1415" />
+            <Rotation rotationX="0" rotationY="-0.233" rotationZ="3.1415" />
         </Module>
         <Module number="1" name="BXL" linkId="1" moduleType="Y" sensorSpacing="0.18" isOn="1">
             <Position positionX="0" positionY="0" positionZ="21.8693" />
-            <Rotation rotationX="-0.233" rotationY="3.1415" rotationZ="1.5708" />
+            <Rotation rotationX="3.1415" rotationY="-0.233" rotationZ="1.5708" />
         </Module>
 
         <Module number="2" name="BXL" linkId="2" moduleType="U" sensorSpacing="0.4" isOn="1">
             <Position positionX="0" positionY="0" positionZ="55.3635" />
-            <Rotation rotationX="0" rotationY="3.1415" rotationZ="0.7854" />
+            <Rotation rotationX="3.1415" rotationY="0" rotationZ="2.3562" />
         </Module>
         <Module number="3" name="CMS" linkId="3" moduleType="V" sensorSpacing="0.4" isOn="1">
             <Position positionX="0" positionY="0" positionZ="56.6205" />
@@ -23,11 +23,11 @@
 
         <Module number="4" name="PG02_patch" linkId="4" moduleType="X" sensorSpacing="0.18" isOn="1">
             <Position positionX="0" positionY="0" positionZ="89.9218" />
-            <Rotation rotationX="0" rotationY="0.233" rotationZ="3.1415" />
+            <Rotation rotationX="0" rotationY="-0.233" rotationZ="3.1415" />
         </Module>
         <Module number="5" name="KIT" linkId="5" moduleType="Y" sensorSpacing="0.18" isOn="1">
             <Position positionX="0" positionY="0" positionZ="93.7693" />
-            <Rotation rotationX="-0.233" rotationY="3.1415" rotationZ="1.5708" />
+            <Rotation rotationX="3.1415" rotationY="-0.233" rotationZ="1.5708" />
         </Module>
     </Station>
 </MUonE_structure>

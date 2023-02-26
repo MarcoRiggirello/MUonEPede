@@ -30,7 +30,7 @@ struct MUonEModule{T<:Real}
     r0::SVector{3, T}
     R::Rotation{3, T}
     function MUonEModule{T}(x0, y0, z0, θx, θy, θz; id, name, spacing) where {T}
-        return new{T}(id, name, spacing, SVector{3, T}(x0, y0, z0), RotXYZ{T}(θx, θy, θz))
+        return new{T}(id, name, spacing, SVector{3, T}(x0, y0, z0), RotZYX{T}(θz, θy, θx))
     end
 end
 
