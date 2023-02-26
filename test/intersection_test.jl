@@ -5,11 +5,11 @@ using Rotations
     t = Track(0.,0.,0.,0.)
     z = MUonEPede.intersection(m, t)[1]
     mm = modules[2]
-    θx, _, _ = Rotations.params(mm.R) 
+    _, θy, _ = Rotations.params(mm.R) 
     zz = MUonEPede.intersection(mm, t)[1]
 
     @test z ≈ 9.1
-    @test zz ≈ mm.r0.z + 0.5 * mm.spacing/cos(θx)
+    @test zz ≈ mm.r0.z + 0.5 * mm.spacing/cos(θy)
 end
 
 @testset "interpolation" begin
@@ -30,6 +30,7 @@ end
     ss = StubSet(s...)
 
     tt = MUonEPede.interpolate(ss, modules)
+    @show tt
 
     #@test tt.et.x ≈ 0
     #@test tt.et.y ≈ 0
@@ -38,6 +39,11 @@ end
     z1 = MUonEPede.intersection(modules[2], tt)[1]
     z4 = MUonEPede.intersection(modules[5], tt)[1]
     z5 = MUonEPede.intersection(modules[6], tt)[1]
+
+    @test MUonEPede.global_to_local(tt(z0), modules[1]).z ≈ -0.09
+    @test MUonEPede.global_to_local(tt(z1), modules[2]).z ≈ -0.09
+    @test MUonEPede.global_to_local(tt(z4), modules[5]).z ≈ -0.09
+    @test MUonEPede.global_to_local(tt(z5), modules[6]).z ≈ -0.09
 
     @test MUonEPede.global_to_local(tt(z0), modules[1]).x ≈ MUonEPede.stub_to_local(s[1], modules[1])[1].x
     @test MUonEPede.global_to_local(tt(z1), modules[2]).x ≈ MUonEPede.stub_to_local(s[2], modules[2])[1].x
