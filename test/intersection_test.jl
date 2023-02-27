@@ -45,8 +45,13 @@ end
     @test MUonEPede.global_to_local(tt(z4), modules[5]).z ≈ -0.09
     @test MUonEPede.global_to_local(tt(z5), modules[6]).z ≈ -0.09
 
+    @test MUonEPede.rmeas(MUonEPede.stub_to_local(s[1], modules[1])[1], z0, modules[1], tt)[1] ≈ 0 atol = 1e-3
+    @test MUonEPede.rmeas(MUonEPede.stub_to_local(s[2], modules[2])[1], z1, modules[2], tt)[1] ≈ 0 atol = 1e-3
+    @test MUonEPede.rmeas(MUonEPede.stub_to_local(s[5], modules[5])[1], z4, modules[5], tt)[1] ≈ 0 atol = 1e-3
+    @test MUonEPede.rmeas(MUonEPede.stub_to_local(s[6], modules[6])[1], z5, modules[6], tt)[1] ≈ 0 atol = 1e-3
+
     @test MUonEPede.global_to_local(tt(z0), modules[1]).x ≈ MUonEPede.stub_to_local(s[1], modules[1])[1].x
     @test MUonEPede.global_to_local(tt(z1), modules[2]).x ≈ MUonEPede.stub_to_local(s[2], modules[2])[1].x
     @test MUonEPede.global_to_local(tt(z4), modules[5]).x ≈ MUonEPede.stub_to_local(s[5], modules[5])[1].x
-    @test MUonEPede.global_to_local(tt(z5), modules[6]).x ≈ MUonEPede.stub_to_local(s[6], modules[6])[1].x rtol=1.e-3
+    @test MUonEPede.global_to_local(tt(z5), modules[6]).x ≈ MUonEPede.stub_to_local(s[6], modules[6])[1].x atol=1e-3
 end
