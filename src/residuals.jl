@@ -61,7 +61,7 @@ function residual(s::Stub, m::MUonEModule, t::Track)
 end
 
 
-function pull(s::Stub, m::MUonEModule, t::Track, w::Real, pcov::AbstractMatrix)
+function pull(s::Stub, m::MUonEModule, t::Track, pcov::AbstractMatrix)
     zs, zc = intersection(m, t)
     ls, lc = stub_to_local(s, m)
 
@@ -95,12 +95,14 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
     hh_seed = [] 
     hh_corr = [] 
     hh_seed_vs_corr = [] 
-    hh_res_vs_bend = []
+    hh_seed_vs_bend = []
+    hh_corr_vs_bend = []
 
     hh_seed_unbiased = []
     hh_corr_unbiased = []
     hh_seed_vs_corr_unbiased = [] 
-    hh_res_vs_bend_unbiased = []
+    hh_seed_vs_bend_unbiased = []
+    hh_corr_vs_bend_unbiased = []
     
     f = ROOT.TFile(rootfile, "recreate")
 
@@ -111,11 +113,13 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
         push!(hh_seed, ROOT.TH1D("seed" * l , histtitle * " -- Seed Layer "  * ll_residuals, 2 * e, -e, e))
         push!(hh_corr, ROOT.TH1D("corr" * l , histtitle * " -- Correlation Layer "  * ll_residuals, 2 * e, -e, e))
         push!(hh_seed_vs_corr, ROOT.TH2D("seed_vs_corr" * l, histtitle * ll_seed_vs_corr, 2 * e, -e, e, 2 * e, -e, e))
-        push!(hh_res_vs_bend, ROOT.TH2D("res_vs_bend" * l, histtitle * ll_res_vs_bend, 2 * e, -e, e, 40, -2, 8))
+        push!(hh_seed_vs_bend, ROOT.TH2D("seed_vs_bend" * l, histtitle * ll_res_vs_bend, 2 * e, -e, e, 40, -2, 8))
+        push!(hh_corr_vs_bend, ROOT.TH2D("corr_vs_bend" * l, histtitle * ll_res_vs_bend, 2 * e, -e, e, 40, -2, 8))
         push!(hh_seed_unbiased, ROOT.TH1D("seed_unbiased" * l , histtitle * " -- Seed Layer "  * ll_pulls, 100, -5, 5))
         push!(hh_corr_unbiased, ROOT.TH1D("corr_unbiased" * l , histtitle * " -- Correlation Layer "  * ll_pulls, 100, -5, 5))
         push!(hh_seed_vs_corr_unbiased, ROOT.TH2D("seed_vs_corr_unbiased" * l, histtitle * ll_seed_vs_corr_unbiased, 100, -5, 5, 100, -5, 5))
-        push!(hh_res_vs_bend_unbiased, ROOT.TH2D("res_vs_bend_unbiased" * l, histtitle * ll_pulls_vs_bend, 100, -5, 5, 40, -2, 8))
+        push!(hh_seed_vs_bend_unbiased, ROOT.TH2D("seed_vs_bend_unbiased" * l, histtitle * ll_pulls_vs_bend, 100, -5, 5, 40, -2, 8))
+        push!(hh_corr_vs_bend_unbiased, ROOT.TH2D("corr_vs_bend_unbiased" * l, histtitle * ll_pulls_vs_bend, 100, -5, 5, 40, -2, 8))
     end
 
     #h_median = ROOT.TH1D("median", title * ll_residuals, 2 * e, -e, e)
@@ -154,17 +158,17 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
             continue
         end
         i += 1
-        if i == 100_000
+        if i == 10_000
             break
         end
         
         # biased residuals
-        χ2 = trackfit!(popt, stubs, modules, cic=cic)
+        χ2 = trackfit!(popt, pcov, stubs, modules, cic=cic)
         ndof = cic ? 14 : 8
 
         h_χ2.Fill(χ2/ndof)
 
-        for (s, m, h_seed, h_corr, h_seed_vs_corr, h_res_vs_bend) in zip(stubs, modules, hh_seed, hh_corr, hh_seed_vs_corr, hh_res_vs_bend)
+        for (s, m, h_seed, h_corr, h_seed_vs_corr, h_seed_vs_bend, h_corr_vs_bend) in zip(stubs, modules, hh_seed, hh_corr, hh_seed_vs_corr, hh_seed_vs_bend, hh_corr_vs_bend)
             r_s, r_c = residual(s, m, Track(popt...))
 
             #i = s.link
@@ -173,7 +177,8 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
             h_seed.Fill(r_s)
             h_corr.Fill(r_c)
             h_seed_vs_corr.Fill(r_s, r_c)
-            h_res_vs_bend.Fill(r_s, s.bend)
+            h_seed_vs_bend.Fill(r_s, s.bend)
+            h_corr_vs_bend.Fill(r_c, s.bend)
         end
 
         #h_median.Fill(median(r))
@@ -197,10 +202,10 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
             h_my_pulls.Fill((popt[4] - event.Track_my)/√(pcov[4,4]))
         end
 
-        for (s, m, h_seed, h_corr, h_res_vs_bend_unbiased, h_seed_vs_corr_unbiased) in zip(stubs, modules, hh_seed_unbiased, hh_corr_unbiased, hh_res_vs_bend_unbiased, hh_seed_vs_corr_unbiased)
+        for (s, m, h_seed, h_corr, h_seed_vs_bend_unbiased, h_corr_vs_bend_unbiased, h_seed_vs_corr_unbiased) in zip(stubs, modules, hh_seed_unbiased, hh_corr_unbiased, hh_seed_vs_bend_unbiased, hh_corr_vs_bend_unbiased, hh_seed_vs_corr_unbiased)
             χ2 = trackfit!(popt, pcov, stubs, modules, cic=cic, skip=s.link)
 
-            r_s, r_c = pull(s, m, Track(popt...), √(χ2/(ndof-2)), pcov)
+            r_s, r_c = pull(s, m, Track(popt...), pcov)
 
             #i = s.link
             #r[i+1], r[i+2] = r_s, r_c
@@ -209,13 +214,14 @@ function residuals(; tree::LazyTree, modules::MUonEStation, rootfile::String, ti
             h_corr.Fill(r_c)
             h_seed_vs_corr_unbiased.Fill(r_s, r_c)
 
-            h_res_vs_bend_unbiased.Fill(r_s, s.bend)
+            h_seed_vs_bend_unbiased.Fill(r_s, s.bend)
+            h_corr_vs_bend_unbiased.Fill(r_c, s.bend)
         end
 
         #h_median_unbiased.Fill(median(r))
     end
 
-    for h in (hh_seed..., hh_corr..., hh_seed_vs_corr..., hh_res_vs_bend..., hh_seed_unbiased..., hh_corr_unbiased..., hh_res_vs_bend_unbiased..., hh_seed_vs_corr_unbiased...)
+    for h in (hh_seed..., hh_corr..., hh_seed_vs_corr..., hh_seed_vs_bend..., hh_corr_vs_bend..., hh_seed_unbiased..., hh_corr_unbiased..., hh_seed_vs_bend_unbiased..., hh_corr_vs_bend_unbiased..., hh_seed_vs_corr_unbiased...)
         h.Write()
     end
 
