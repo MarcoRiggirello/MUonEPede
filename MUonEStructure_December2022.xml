@@ -9,7 +9,7 @@
         </Module>
         <Module number="1" name="BXL" linkId="1" moduleType="Y" sensorSpacing="0.18" isOn="1">
             <Position positionX="0" positionY="0" positionZ="21.8693" />
-            <Rotation rotationX="3.1415" rotationY="-0.233" rotationZ="1.5708" />
+            <Rotation rotationX="3.1415" rotationY="0.233" rotationZ="1.5708" />
         </Module>
 
         <Module number="2" name="BXL" linkId="2" moduleType="U" sensorSpacing="0.4" isOn="1">
@@ -27,7 +27,7 @@
         </Module>
         <Module number="5" name="KIT" linkId="5" moduleType="Y" sensorSpacing="0.18" isOn="1">
             <Position positionX="0" positionY="0" positionZ="93.7693" />
-            <Rotation rotationX="3.1415" rotationY="-0.233" rotationZ="1.5708" />
+            <Rotation rotationX="3.1415" rotationY="0.233" rotationZ="1.5708" />
         </Module>
     </Station>
 </MUonE_structure>
